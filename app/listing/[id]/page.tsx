@@ -1,7 +1,8 @@
 import { getListingDetail } from "@/lib/getListingDetail";
 
-export default async function ListingDetail({ params }: { params: { id: string } }) {
-    const data = await getListingDetail(params.id);
+export default async function ListingDetail({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const data = await getListingDetail(id);
 
     return (
         <div className="max-w-6xl mx-auto p-6">
