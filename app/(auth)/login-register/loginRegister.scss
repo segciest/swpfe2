@@ -1,0 +1,235 @@
+/* Font riêng chỉ áp dụng trong trang này */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Đừng dùng * — thay bằng reset nội bộ */
+.body * {
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Background cho trang login-register */
+.body {
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Layout container chính */
+.containerLayout {
+  background-color: #fff;
+  border-radius: 30px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+  width: 70%;
+  min-height: 600px;
+  transform: scale(0.9);
+  margin: auto;
+}
+
+/* Các style cục bộ còn lại giữ nguyên */
+.containerLayout p {
+  font-size: 14px;
+  line-height: 20px;
+  margin: 20px 0;
+}
+
+.containerLayout span {
+  font-size: 12px;
+}
+
+.containerLayout a {
+  color: #333;
+  font-size: 13px;
+  text-decoration: none;
+  margin: 15px 0 10px;
+}
+
+/* Button ẩn */
+.containerLayout button.hiddenBtn {
+  background-color: #d00c0c;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 10px 45px;
+}
+
+.containerLayout button.hiddenBtn:hover {
+  box-shadow: rgba(130, 46, 240, 0.4) 5px 5px, rgba(240, 46, 170, 0.3) 10px 10px,
+    rgba(240, 46, 170, 0.2) 15px 15px, rgba(240, 46, 170, 0.1) 20px 20px,
+    rgba(240, 46, 170, 0.05) 25px 25px;
+}
+
+/* Button chính */
+.btn {
+  margin: 20px;
+  padding: 15px 40px;
+  border: none;
+  outline: none;
+  color: #fff;
+  cursor: pointer;
+  position: relative;
+  z-index: 0;
+  border-radius: 12px;
+}
+
+.btn::after {
+  content: "";
+  z-index: -1;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #333;
+  left: 0;
+  top: 0;
+  border-radius: 10px;
+}
+
+.btn::before {
+  content: "";
+  background: linear-gradient(
+    45deg,
+    #ff0000, #ff7300, #fffb00, #48ff00,
+    #00ffd5, #002bff, #ff00c8, #ff0000
+  );
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  background-size: 600%;
+  z-index: -1;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  filter: blur(8px);
+  animation: glowing 20s linear infinite;
+  transition: opacity .3s ease-in-out;
+  border-radius: 10px;
+  opacity: 0;
+}
+
+@keyframes glowing {
+  0% {background-position: 0 0;}
+  50% {background-position: 400% 0;}
+  100% {background-position: 0 0;}
+}
+
+.btn:hover::before { opacity: 1; }
+.btn:active:after { background: transparent; }
+.btn:active { color: #000; font-weight: bold; }
+
+.containerLayout form {
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 40px;
+  height: 100%;
+}
+
+.containerLayout input {
+  background-color: #eee;
+  border: none;
+  margin: 8px 0;
+  padding: 10px 15px;
+  font-size: 13px;
+  border-radius: 8px;
+  width: 100%;
+  outline: none !important;
+}
+
+.formContainer {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: all 0.6s ease-in-out;
+}
+
+/* Các phần toggle, animation, responsive giữ nguyên */
+.signIn { left: 0; width: 50%; z-index: 2; }
+.containerLayout.active .signIn { transform: translateX(100%); }
+
+.signUp { left: 0; width: 50%; opacity: 0; z-index: 1; }
+.containerLayout.active .signUp {
+  transform: translateX(100%);
+  opacity: 1;
+  z-index: 5;
+  animation: move 0.6s;
+}
+
+@keyframes move {
+  0%, 49.99% { opacity: 0; z-index: 1; }
+  50%, 100% { opacity: 1; z-index: 5; }
+}
+
+.formIcon { margin: 20px 0; }
+.formIcon a {
+  border: 1px solid #ccc;
+  border-radius: 20%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 3px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+}
+
+.toggleContainer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  transition: all 0.6s ease-in-out;
+  border-radius: 150px 0 0 100px;
+  z-index: 1000;
+}
+
+.containerLayout.active .toggleContainer {
+  transform: translateX(-100%);
+  border-radius: 0 50px 50px 0;
+}
+
+.toggle {
+  background: linear-gradient(to right, #5c6bc0, #512da8);
+  color: #fff;
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: all 0.6s ease-in-out;
+}
+
+.containerLayout.active .toggle { transform: translateX(50%); }
+
+.togglePannel {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 0 30px;
+  text-align: center;
+  top: 0;
+  transform: translateX(0);
+  transition: all 0.6s ease-in-out;
+}
+
+.toggleLeft { transform: translateX(-200%); }
+.containerLayout.active .toggleLeft { transform: translateX(0); }
+
+.toggleRight { right: 0; transform: translateX(0); }
+.containerLayout.active .toggleRight { transform: translateX(200%); }
+
+@media (max-width: 992px) {
+  .containerLayout { width: 100%; overflow: auto; }
+}

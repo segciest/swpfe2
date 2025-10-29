@@ -65,7 +65,7 @@ export default function Navbar() {
                 <div className="relative">
                     {!userData ? (
                         <button
-                            onClick={() => router.push("/login")}
+                            onClick={() => router.push("/login-register")}
                             className="flex items-center space-x-1 bg-white px-3 py-1 rounded-full shadow hover:bg-gray-100"
                         >
                             <LogIn className="w-5 h-5 text-gray-700" />
