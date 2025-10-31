@@ -1,20 +1,20 @@
-// app/components/Navbar/Navbar.tsx
+// components/Navbar/Navbar.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
-import { ThemeToggleButton } from "@/app/components/ThemeToggleButton"; // <-- Sửa lại
-// CẬP NHẬT CÁC ICON IMPORTS
 import {
   User,
   LogOut,
   LogIn,
   UserCircle,
-  Bolt,       // Icon cho Logo
-  PlusCircle, // Icon cho nút "Đăng tin"
-  Star        // Icon cho "Gói Ưu Đãi"
+  Bolt,
+  PlusCircle,
+  Star,
+  Crown,
 } from "lucide-react";
+// KHÔNG CẦN ThemeToggleButton
 
 export default function Navbar() {
   const [userData, setUserData] = useState<any>(null);
@@ -22,16 +22,29 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem("userData");
-    if (stored) {
-      setUserData(JSON.parse(stored));
-    }
+    // Logic kiểm tra user
+    const checkUserData = () => {
+      const stored = localStorage.getItem("userData");
+      if (stored) {
+        setUserData(JSON.parse(stored));
+      } else {
+        setUserData(null);
+      }
+    };
+    checkUserData();
+    // Thêm listener để cập nhật Navbar nếu đăng nhập/đăng xuất ở tab khác
+    window.addEventListener('storage', checkUserData);
+    return () => {
+      window.removeEventListener('storage', checkUserData);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("userData");
-    setUserData(null);
+    setUserData(null); 
     setShowUserMenu(false);
+    // Gửi tín hiệu storage để các tab khác (nếu có) cũng cập nhật
+    window.dispatchEvent(new Event("storage")); 
     router.push("/");
   };
 
@@ -39,29 +52,33 @@ export default function Navbar() {
     if (userData) {
       router.push("/listings/create");
     } else {
-      // ĐÃ SỬA:
       router.push("/login-register");
     }
   };
 
   return (
-    <nav className="w-full bg-[#1a3a3a] text-white shadow-lg px-6 py-4">
+    // GIAO DIỆN MỚI: Nền gradient vàng, chữ đen
+    <nav className={`
+      w-full shadow-sm px-6 py-4 
+      bg-gradient-to-r from-yellow-300 to-yellow-600 text-gray-900
+    `}>
       <div className="container mx-auto flex items-center justify-between">
 
         {/* --- Phần 1: Logo (Left) --- */}
         <div className="flex-1 flex justify-start">
           <Link href="/" className="flex items-center gap-2">
-            <Bolt className="w-8 h-8 text-green-400" />
-            <span className="font-bold text-2xl">EV-Market</span>
+            {/* Logo màu xanh lá đậm */}
+            <Bolt className="w-8 h-8 text-green-800" />
+            <span className="font-bold text-2xl text-green-900">EV-Market</span>
           </Link>
         </div>
 
         {/* --- Phần 2: Nav Links (Center) --- */}
         <div className="hidden md:flex flex-1 justify-center items-center gap-8">
-          <Link href="/xe-dien" className="text-gray-200 hover:text-white transition-colors font-medium">
+          <Link href="/xe-dien" className="font-medium text-gray-800 hover:text-black transition-colors">
             Xe Điện
           </Link>
-          <Link href="/pin-xe-dien" className="text-gray-200 hover:text-white transition-colors font-medium">
+          <Link href="/pin-xe-dien" className="font-medium text-gray-800 hover:text-black transition-colors">
             Pin Xe Điện
           </Link>
         </div>
@@ -69,54 +86,58 @@ export default function Navbar() {
         {/* --- Phần 3: CTAs và User (Right) --- */}
         <div className="flex-1 flex items-center justify-end gap-3">
           
-          {/* Nút Các Gói Ưu Đãi (NHẤN MẠNH) */}
+          {/* Nút Các Gói Ưu Đãi (Màu xanh dương) */}
           <Link
-            href="/pricing"
-            className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold px-4 py-2 rounded-full text-sm transition-colors"
+            href="/subscription" // Trỏ đến trang subscription
+            className={`
+              flex items-center gap-2 font-bold px-4 py-2 rounded-full text-sm transition-colors
+              bg-blue-600 hover:bg-blue-700 text-white
+            `}
           >
-            <Star className="w-5 h-5" />
+            <Crown className="w-5 h-5" />
             <span>Các Gói Ưu Đãi</span>
           </Link>
 
-          {/* Nút Đăng tin */}
+          {/* Nút Đăng tin (Màu cam) */}
           <button
             onClick={handlePostClick}
-            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-2 rounded-full text-sm transition-colors"
+            className={`
+              flex items-center gap-2 font-medium px-4 py-2 rounded-full text-sm transition-colors
+              bg-orange-500 hover:bg-orange-600 text-white
+            `}
           >
             <PlusCircle className="w-5 h-5" />
             <span>Đăng tin</span>
           </button>
 
-          {/* THÊM NÚT DARK MODE VÀO ĐÂY */}
-          <ThemeToggleButton />
+          {/* KHÔNG CÒN NÚT THEME */}
 
-          {/* User / Login */}
-          {/* XÓA 'ml-2' ĐỂ KHOẢNG CÁCH ĐỒNG ĐỀU */}
-          <div className="relative">
+          {/* User / Login (Style cho nền vàng) */}
+          <div className="relative ml-2"> 
             {!userData ? (
-              // Nút Đăng nhập
               <button
-                // ĐÃ SỬA:
                 onClick={() => router.push("/login-register")}
-                className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors
+                  bg-black/10 hover:bg-black/20 text-gray-800
+                `}
               >
                 <LogIn className="w-5 h-5" />
                 <span>Đăng Nhập</span>
               </button>
             ) : (
-              // Menu người dùng
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2"
               >
-                <UserCircle className="w-8 h-8 text-gray-300 hover:text-white" />
-                <span className="hidden md:block text-sm font-medium">{userData.userName}</span>
+                <UserCircle className="w-8 h-8 text-gray-800 hover:opacity-80" />
+                <span className="hidden md:block text-sm font-medium text-gray-800">{userData?.userName || 'User'}</span> 
               </button>
             )}
 
-            {/* Dropdown user */}
+            {/* Dropdown user (vẫn nền trắng) */}
             {showUserMenu && userData && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 text-gray-800">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg overflow-hidden z-50 text-gray-800 border border-gray-200">
                 <Link
                   href="/profile"
                   onClick={() => setShowUserMenu(false)}
@@ -138,3 +159,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
