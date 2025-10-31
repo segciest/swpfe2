@@ -1,24 +1,35 @@
-"use client";
+// app/layout.tsx
 
-import "./globals.css";
-import Navbar from "@/components/Navbar/Navbar";
-import { usePathname } from "next/navigation";
+import { ThemeProvider } from './components/ThemeProvider'; // <-- Sửa lại thành đường dẫn tương đối
+import Navbar from '@/components/Navbar/Navbar'; // <-- Sửa lại (Bỏ {})
+import Footer from '@/components/Footer/Footer'; // <-- Sửa lại (Bỏ {})
+import './globals.css';
+// ... các import khác của bạn (ví dụ: font chữ)
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
-  // Ẩn navbar nếu pathname nằm trong nhóm (auth)
-  const isAuthPage = pathname.startsWith("/login-register") || pathname.startsWith("/(auth)");
-
   return (
-    <html lang="vi">
-      <body className="bg-gray-50">
-        {!isAuthPage && <Navbar />} {/* chỉ hiển thị khi không ở (auth) */}
-        <main>{children}</main>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/* Đặt Navbar VÀ Footer ở đây */}
+          <Navbar /> 
+          
+          <main>
+            {children} {/* Đây là nơi page.tsx sẽ được render */}
+          </main>
+          
+          <Footer />
+
+        </ThemeProvider>
       </body>
     </html>
   );
