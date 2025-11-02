@@ -34,9 +34,11 @@ export default function SignInPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Login failed');
 
+            // ✅ Lưu token nếu cần cho tiện ích auth
             saveToken(data.token, remember);
-            const stored = { token: data.token, userId: data.userId };
-            localStorage.setItem('userData', JSON.stringify(stored));
+
+            // ✅ Lưu toàn bộ dữ liệu trả về xuống localStorage
+            localStorage.setItem('userData', JSON.stringify(data));
 
             setMessage('Login successful!');
             router.push('/');
