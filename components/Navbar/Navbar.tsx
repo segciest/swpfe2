@@ -14,12 +14,17 @@ const CATEGORIES = [
 export default function Navbar() {
     const router = useRouter();
 
-    // User & state
+    // User & states
     const [userData, setUserData] = useState<any | null>(null);
     const [isClient, setIsClient] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showNotify, setShowNotify] = useState(false);
+
+    // Notifications
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [loadingNoti, setLoadingNoti] = useState(false);
+    const [newNoti, setNewNoti] = useState(false);
 
     // Form state (đăng bài)
     const [categoryId, setCategoryId] = useState<number>(1);
@@ -40,17 +45,42 @@ export default function Navbar() {
     const [previews, setPreviews] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // ✅ Kiểm tra localStorage khi mount
+    // ✅ Load userData from localStorage
     useEffect(() => {
         setIsClient(true);
         const stored = localStorage.getItem('userData');
         if (stored) setUserData(JSON.parse(stored));
     }, []);
 
+    // ✅ Fetch Notifications
+    const fetchNotifications = async (userId: string) => {
+        try {
+            setLoadingNoti(true);
+            const res = await fetch(`http://localhost:8080/api/notifications/${userId}`);
+            if (!res.ok) throw new Error('Không thể tải thông báo');
+            const data = await res.json();
+            if (data.length > notifications.length) setNewNoti(true);
+            setNotifications(data.reverse()); // Mới nhất lên đầu
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoadingNoti(false);
+        }
+    };
+
+    // ✅ Realtime update mỗi 10s
+    useEffect(() => {
+        if (!userData?.userId) return;
+        fetchNotifications(userData.userId);
+        const interval = setInterval(() => {
+            fetchNotifications(userData.userId);
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [userData]);
+
     const handleLogout = () => {
         localStorage.removeItem('userData');
         setUserData(null);
-        setShowUserMenu(false);
         router.push('/');
     };
 
@@ -136,11 +166,8 @@ export default function Navbar() {
         }
     };
 
-    if (!isClient) return null; // tránh lỗi SSR
-
-    // ✅ Xác định link hồ sơ dựa trên role
-    const profileLink =
-        userData?.role === 'ADMIN' || userData?.role === 'MANAGER' ? '/admin' : '/profile';
+    if (!isClient) return null;
+    const profileLink = userData?.role === 'ADMIN' || userData?.role === 'MANAGER' ? '/admin' : '/profile';
 
     return (
         <>
@@ -167,6 +194,7 @@ export default function Navbar() {
 
                 {/* Right section */}
                 <div className="flex items-center gap-4 relative">
+
                     {/* 🔔 Notification */}
                     {userData && (
                         <div className="relative">
@@ -174,10 +202,14 @@ export default function Navbar() {
                                 onClick={() => {
                                     setShowNotify(!showNotify);
                                     setShowUserMenu(false);
+                                    setNewNoti(false);
                                 }}
-                                className="p-2 bg-white rounded-full shadow hover:bg-gray-100"
+                                className="relative p-2 bg-white rounded-full shadow hover:bg-gray-100"
                             >
                                 <Bell className="w-5 h-5 text-gray-700" />
+                                {newNoti && (
+                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                                )}
                             </button>
 
                             <AnimatePresence>
@@ -187,9 +219,36 @@ export default function Navbar() {
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: -10 }}
                                         transition={{ duration: 0.2 }}
-                                        className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-md p-3 z-[999]"
+                                        className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-[999]"
                                     >
-                                        <p className="text-sm text-gray-700">Bạn chưa có thông báo nào</p>
+                                        <div className="p-4">
+                                            <h3 className="text-base font-semibold text-gray-800 mb-3 flex items-center justify-between">
+                                                Thông báo
+                                                {loadingNoti && (
+                                                    <span className="text-xs text-gray-400 italic">Đang tải...</span>
+                                                )}
+                                            </h3>
+
+                                            {notifications.length === 0 ? (
+                                                <p className="text-sm text-gray-500 text-center py-4">
+                                                    Không có thông báo nào
+                                                </p>
+                                            ) : (
+                                                <ul className="max-h-80 overflow-y-auto space-y-3 pr-1">
+                                                    {notifications.map((noti, idx) => (
+                                                        <li
+                                                            key={noti.notificationId || idx}
+                                                            className="bg-gray-50 hover:bg-gray-100 p-3 rounded-lg shadow-sm transition"
+                                                        >
+                                                            <p className="text-sm text-gray-800">{noti.message}</p>
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                🕒 {new Date(noti.createdTime).toLocaleString('vi-VN')}
+                                                            </p>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -197,7 +256,7 @@ export default function Navbar() {
                     )}
 
                     {/* ➕ Đăng bài */}
-                    {userData && (
+                    {userData?.role === 'USER' && (
                         <button
                             onClick={() => setShowCreateModal(true)}
                             className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow hover:bg-gray-100"
@@ -258,7 +317,7 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* --- Modal đăng bài --- */}
+            {/* 🪄 Modal đăng bài */}
             <AnimatePresence>
                 {showCreateModal && userData && (
                     <motion.div
@@ -282,7 +341,7 @@ export default function Navbar() {
                             </button>
 
                             <h2 className="text-xl font-bold mb-4">Đăng tin mới</h2>
-
+                            {/* (Form đăng bài giữ nguyên phần cũ) */}
                             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                                 <select
                                     value={categoryId}
@@ -294,7 +353,6 @@ export default function Navbar() {
                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
                                 </select>
-
                                 <input
                                     type="text"
                                     placeholder="Tiêu đề"
@@ -303,7 +361,6 @@ export default function Navbar() {
                                     className="border rounded-lg px-3 py-2 text-sm"
                                     required
                                 />
-
                                 <textarea
                                     placeholder="Mô tả chi tiết"
                                     value={description}
@@ -311,7 +368,6 @@ export default function Navbar() {
                                     className="border rounded-lg px-3 py-2 text-sm"
                                     required
                                 />
-
                                 <input
                                     type="number"
                                     placeholder="Giá (VNĐ)"
@@ -320,45 +376,6 @@ export default function Navbar() {
                                     className="border rounded-lg px-3 py-2 text-sm"
                                     required
                                 />
-
-                                {categoryId !== 3 && (
-                                    <>
-                                        <input
-                                            type="number"
-                                            placeholder="Số chỗ ngồi"
-                                            value={seats}
-                                            onChange={(e) => setSeats(e.target.value)}
-                                            className="border rounded-lg px-3 py-2 text-sm"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder="Quãng đường đã đi (km)"
-                                            value={mileage}
-                                            onChange={(e) => setMileage(e.target.value)}
-                                            className="border rounded-lg px-3 py-2 text-sm"
-                                        />
-                                    </>
-                                )}
-
-                                {categoryId === 3 && (
-                                    <>
-                                        <input
-                                            type="number"
-                                            placeholder="Số chu kỳ sạc"
-                                            value={cycleCount}
-                                            onChange={(e) => setCycleCount(e.target.value)}
-                                            className="border rounded-lg px-3 py-2 text-sm"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder="Điện áp (V)"
-                                            value={voltage}
-                                            onChange={(e) => setVoltage(e.target.value)}
-                                            className="border rounded-lg px-3 py-2 text-sm"
-                                        />
-                                    </>
-                                )}
-
                                 <input
                                     type="file"
                                     multiple
@@ -366,7 +383,6 @@ export default function Navbar() {
                                     onChange={handleFileChange}
                                     className="border rounded-lg px-3 py-2 text-sm"
                                 />
-
                                 {previews.length > 0 && (
                                     <div className="grid grid-cols-5 gap-2 mt-2">
                                         {previews.map((preview, idx) => (
@@ -387,7 +403,6 @@ export default function Navbar() {
                                         ))}
                                     </div>
                                 )}
-
                                 <button
                                     type="submit"
                                     disabled={loading}
