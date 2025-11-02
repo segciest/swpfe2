@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createVNPayPayment, cancelPayment } from '@/utils/api'; 
+import { createVNPayPayment, cancelPayment } from '@/utils/api';
 import { CreditCard, AlertTriangle, CheckCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  const [user, setUser] = useState<any>(null); 
+
+  type UserInfo = { userId: string; userName?: string; userEmail?: string } | null;
+  const [user, setUser] = useState<UserInfo>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [pendingPaymentModal, setPendingPaymentModal] = useState<any>(null);
@@ -24,15 +25,14 @@ function PaymentContent() {
     const storedUserData = localStorage.getItem('userData');
     if (storedUserData) {
       const data = JSON.parse(storedUserData);
-      
+
       setUser({
         userId: data.userId,
-        userName: data.userName || "Vu Le Truong moi", 
-        userEmail: data.userEmail || "thinhthinh4@example.com"
+        userName: data.userName || 'Khách hàng',
+        userEmail: data.userEmail || 'user@example.com',
       });
-
     } else {
-      router.push('/login-register'); 
+      router.push('/login-register');
     }
     setAuthChecked(true);
   }, [router]);
@@ -47,20 +47,36 @@ function PaymentContent() {
     try {
       const paymentData = {
         amount: parseFloat(price),
-        subscriptionId: parseInt(subId, 10),
-        userId: user.userId, 
-        orderInfo: `Thanh toán gói ${name} cho người dùng ${user.userName}`
+        orderInfo: `Thanh toán gói ${name}`,
+        subscriptionId: parseInt(subId as string, 10),
+        userId: user.userId,
       };
+
       const data = await createVNPayPayment(paymentData);
-      if (data.code === '200' && data.data) {
-        window.location.href = data.data;
-      } else if (data.code === '409' && data.data) {
-        setPendingPaymentModal(data.data);
-      } else {
-        throw new Error(data.message || 'Không thể tạo thanh toán');
+      // Backend returns { paymentUrl, orderId, amount, paymentId, userSubId }
+      // or on conflict: { error: 'PENDING_PAYMENT_EXISTS', message, pendingPayment }
+      if (data && data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+        return;
       }
-    } catch (error: any) {
-      alert(error.message || 'Đã xảy ra lỗi, vui lòng thử lại.');
+
+      if (data && data.error === 'PENDING_PAYMENT_EXISTS' && data.pendingPayment) {
+        setPendingPaymentModal({
+          paymentId: data.pendingPayment.paymentId,
+          orderId: data.pendingPayment.orderId,
+          amount: data.pendingPayment.amount,
+          subName: data.pendingPayment.packageName || data.pendingPayment.subName || name,
+          createDate: data.pendingPayment.createDate,
+          minutesRemaining: data.pendingPayment.minutesRemaining,
+        });
+        setProcessing(false);
+        return;
+      }
+
+      throw new Error((data && data.message) || 'Không thể tạo thanh toán');
+    } catch (e) {
+      const err = e as Error;
+      alert(err.message || 'Đã xảy ra lỗi, vui lòng thử lại.');
       setProcessing(false);
     }
   };
@@ -70,15 +86,16 @@ function PaymentContent() {
     if (!pendingPaymentModal) return;
     try {
       setProcessing(true);
-      await cancelPayment(pendingPaymentModal.paymentId); 
+      await cancelPayment(pendingPaymentModal.paymentId);
       alert('Đã hủy giao dịch cũ thành công!');
       setPendingPaymentModal(null);
       setTimeout(() => {
         setProcessing(false);
         handleVNPayPayment();
       }, 500);
-    } catch (error: any) {
-      alert(error.message || 'Không thể hủy giao dịch');
+    } catch (e) {
+      const err = e as Error;
+      alert(err.message || 'Không thể hủy giao dịch');
       setProcessing(false);
     }
   };
@@ -88,8 +105,8 @@ function PaymentContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-12 text-center max-w-md border dark:border-slate-700 text-gray-900 dark:text-white">
-            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-600 dark:border-green-500 border-t-transparent mb-4"></div>
-            <h2 className="text-xl font-semibold">Đang kiểm tra đăng nhập...</h2>
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-600 dark:border-green-500 border-t-transparent mb-4"></div>
+          <h2 className="text-xl font-semibold">Đang kiểm tra đăng nhập...</h2>
         </div>
       </div>
     );
@@ -97,25 +114,22 @@ function PaymentContent() {
 
   // GIAO DIỆN CHÍNH (FORM TRẮNG TRÊN NỀN ẢNH)
   return (
-    // Thêm style ảnh nền vào đây
-    <div 
+    <div
       className="min-h-screen flex justify-center items-center py-12 px-4"
       style={{
-        backgroundImage: "url('/images/paymentbackground.jpg')", // Giả sử ảnh ở public/images/paymentbackground.jpg
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed" 
+        backgroundImage: "url('/images/paymentbackground.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
       }}
     >
-      {/* Form màu trắng (giữ nguyên) */}
+      {/* Form màu trắng */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-lg w-full text-gray-900 dark:text-white transition-colors duration-300">
-        
         <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <h1 className="text-2xl font-bold text-center">Thanh toán</h1>
         </div>
 
         <div className="p-6 md:p-8">
-          
           <div className="mb-6">
             <h2 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h2>
             <div className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 space-y-3 border border-gray-200 dark:border-slate-700">
@@ -145,14 +159,7 @@ function PaymentContent() {
             <h2 className="text-lg font-semibold mb-4">Phương thức thanh toán</h2>
             <div className="border-2 border-blue-600 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg p-4">
               <div className="flex items-center gap-4 mb-3">
-                
-                {/* Logo VNPay (giữ nguyên) */}
-                <img 
-                  src="/images/vnpaylogo.png" 
-                  alt="VNPay" 
-                  className="w-10 h-10 rounded-md" 
-                />
-
+                <img src="/images/vnpaylogo.png" alt="VNPay" className="w-10 h-10 rounded-md" />
                 <div>
                   <h3 className="font-bold">VNPay</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Thanh toán qua cổng VNPay</p>
@@ -182,7 +189,7 @@ function PaymentContent() {
           >
             {processing ? 'Đang xử lý...' : 'Thanh toán với VNPay'}
           </button>
-          
+
           <button
             onClick={() => router.back()}
             className="w-full text-center mt-4 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 py-3 rounded-lg font-semibold transition"
@@ -191,14 +198,10 @@ function PaymentContent() {
           </button>
 
           <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-3 text-center">
-            {/* === SỬA LỖI Ở ĐÂY === */}
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
               <span className="font-bold">Lưu ý:</span> Bạn sẽ được chuyển đến trang thanh toán VNPay. Sau khi thanh toán thành công, bạn sẽ được chuyển về trang xác nhận.
-            </p> 
-            {/* Thẻ </Vl> sai đã được sửa thành </p> */}
-            {/* ======================= */}
+            </p>
           </div>
-
         </div>
       </div>
 
@@ -208,12 +211,10 @@ function PaymentContent() {
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8 max-w-md w-full text-gray-900 dark:text-white transition-colors duration-300">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-center mb-3">Phát hiện giao dịch đang chờ</h2>
-            <p className="text-center mb-6">
+            <p className="text-center mb-2">
               Bạn có một giao dịch cho gói <strong>{pendingPaymentModal.subName}</strong> (mã: {pendingPaymentModal.paymentId}) chưa hoàn tất.
-            </p> 
-            <p className="text-center mb-6">
-              Vui lòng hủy giao dịch cũ trước khi đăng ký gói mới.
             </p>
+            <p className="text-center mb-6">Vui lòng hủy giao dịch cũ trước khi đăng ký gói mới.</p>
 
             <div className="space-y-3">
               <button
@@ -237,11 +238,10 @@ function PaymentContent() {
   );
 }
 
-export default function PaymentPage() {
+export default function PaymentCheckoutPage() {
   return (
     <Suspense>
       <PaymentContent />
     </Suspense>
   );
 }
-

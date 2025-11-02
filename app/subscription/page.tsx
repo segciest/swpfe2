@@ -94,8 +94,8 @@ export default function PricingPage() {
     
     // (4) Nó kiểm tra state isLoggedIn
     if (isLoggedIn) {
-      // NẾU LÀ 'true': Đã đăng nhập -> Chuyển đến trang payment
-      const checkoutUrl = `/payment?subId=${plan.id}&price=${plan.priceValue}&name=${plan.name}`;
+      // NẾU LÀ 'true': Đã đăng nhập -> Chuyển đến trang checkout mới
+      const checkoutUrl = `/payment/checkout?subId=${plan.id}&price=${plan.priceValue}&name=${encodeURIComponent(plan.name)}`;
       router.push(checkoutUrl);
     } else {
       // NẾU LÀ 'false': Chưa đăng nhập -> Chuyển về trang login

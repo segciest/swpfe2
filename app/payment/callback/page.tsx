@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { handleVNPayReturn } from '@/utils/api';
 import Link from 'next/link';
 
 function PaymentResultContent() {
@@ -22,39 +23,54 @@ function PaymentResultContent() {
 
   const checkPaymentResult = async () => {
     try {
-      const responseCode = searchParams.get('vnp_ResponseCode');
-      const orderId = searchParams.get('vnp_TxnRef');
-      const amount = searchParams.get('vnp_Amount');
-      const transactionNo = searchParams.get('vnp_TransactionNo');
+      setChecking(true);
 
-      if (!responseCode) {
+      // Build params object from query string
+      const paramsObj: any = {};
+      const entries = new URLSearchParams(searchParams.toString());
+      entries.forEach((value, key) => {
+        paramsObj[key] = value;
+      });
+
+      // Call backend to process return and update DB
+      // handleVNPayReturn already sends a GET to /api/vnpay/return?{query}
+      const res = await handleVNPayReturn(paramsObj);
+
+      // Backend should return JSON with fields like { orderId, amount, transactionNo, responseCode }
+      if (res) {
+        const responseCode = res.responseCode || paramsObj.vnp_ResponseCode;
+        const isSuccess = responseCode === '00' || res.success === true;
+
         setResult({
-          success: false,
-          message: 'Không tìm thấy thông tin thanh toán'
+          success: !!isSuccess,
+          message: isSuccess ? (res.message || 'Thanh toán thành công! Gói đăng ký của bạn đã được kích hoạt.') : (res.message || 'Thanh toán thất bại. Vui lòng thử lại.'),
+          orderId: res.orderId || paramsObj.vnp_TxnRef,
+          amount: res.amount || (paramsObj.vnp_Amount ? parseInt(paramsObj.vnp_Amount) / 100 : undefined),
+          transactionNo: res.transactionNo || paramsObj.vnp_TransactionNo,
         });
-        setChecking(false);
-        return;
+      } else {
+        // Fallback to reading params if backend returned nothing
+        const responseCode = searchParams.get('vnp_ResponseCode');
+        const isSuccess = responseCode === '00';
+        setResult({
+          success: isSuccess,
+          message: isSuccess ? 'Thanh toán thành công! Gói đăng ký của bạn đã được kích hoạt.' : 'Thanh toán thất bại. Vui lòng thử lại.',
+          orderId: searchParams.get('vnp_TxnRef') || undefined,
+          amount: searchParams.get('vnp_Amount') ? parseInt(searchParams.get('vnp_Amount')!) / 100 : undefined,
+          transactionNo: searchParams.get('vnp_TransactionNo') || undefined,
+        });
       }
-
-      // VNPay response codes:
-      // 00: Success
-      // Others: Failed
+    } catch (error: any) {
+      console.error('Failed to check payment:', error);
+      // Network or server error: fallback to query params but notify user
+      const responseCode = searchParams.get('vnp_ResponseCode');
       const isSuccess = responseCode === '00';
-
       setResult({
         success: isSuccess,
-        message: isSuccess 
-          ? 'Thanh toán thành công! Gói đăng ký của bạn đã được kích hoạt.' 
-          : 'Thanh toán thất bại. Vui lòng thử lại.',
-        orderId: orderId || undefined,
-        amount: amount ? parseInt(amount) / 100 : undefined,
-        transactionNo: transactionNo || undefined,
-      });
-    } catch (error) {
-      console.error('Failed to check payment:', error);
-      setResult({
-        success: false,
-        message: 'Có lỗi xảy ra khi kiểm tra thanh toán'
+        message: isSuccess ? 'Thanh toán có vẻ thành công (tạm). Đang chờ xác nhận từ hệ thống.' : 'Không thể xác nhận thanh toán. Vui lòng thử lại.',
+        orderId: searchParams.get('vnp_TxnRef') || undefined,
+        amount: searchParams.get('vnp_Amount') ? parseInt(searchParams.get('vnp_Amount')!) / 100 : undefined,
+        transactionNo: searchParams.get('vnp_TransactionNo') || undefined,
       });
     } finally {
       setChecking(false);

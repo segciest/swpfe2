@@ -431,7 +431,11 @@ export async function retryPayment(userSubId: number, userId: string): Promise<a
 export async function handleVNPayReturn(params: any): Promise<any> {
   const queryString = new URLSearchParams(params).toString();
   const res = await fetch(`${API_URL}/vnpay/return?${queryString}`);
-  if (!res.ok) throw new Error('Failed to process VNPay return');
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('VNPay return error:', res.status, errorText);
+    throw new Error(`Failed to process VNPay return: ${res.status} - ${errorText}`);
+  }
   return await res.json();
 }
 
