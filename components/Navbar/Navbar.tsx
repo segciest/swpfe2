@@ -24,8 +24,6 @@ export default function Navbar() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
-    const [contact, setContact] = useState('');
-    const [city, setCity] = useState('');
 
     // Shared technical fields
     const [brand, setBrand] = useState('');
@@ -93,8 +91,6 @@ export default function Navbar() {
                 description,
                 price: Number(price),
                 categoryId,
-                contact,
-                city,
                 brand,
                 model,
                 year: year ? Number(year) : undefined,
@@ -274,8 +270,6 @@ export default function Navbar() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <input placeholder="Tiêu đề" value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
                                     <input placeholder="Giá (VNĐ)" value={price} onChange={(e) => setPrice(e.target.value)} className="input" />
-                                    <input placeholder="Liên hệ" value={contact} onChange={(e) => setContact(e.target.value)} className="input" />
-                                    <input placeholder="Thành phố" value={city} onChange={(e) => setCity(e.target.value)} className="input" />
                                     <input placeholder="Thương hiệu" value={brand} onChange={(e) => setBrand(e.target.value)} className="input" />
                                     <input placeholder="Model" value={model} onChange={(e) => setModel(e.target.value)} className="input" />
                                     <input placeholder="Năm SX" value={year} onChange={(e) => setYear(e.target.value)} className="input" />
