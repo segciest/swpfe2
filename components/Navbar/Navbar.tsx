@@ -102,19 +102,38 @@ export default function Navbar() {
         if (!userData) return alert('Vui lòng đăng nhập để đăng bài!');
         if (files.length === 0) return alert('Vui lòng chọn ít nhất 1 ảnh!');
 
+        // Client-side validation to avoid server-side 400s
+        const priceNum = Number(price);
+        if (isNaN(priceNum) || priceNum <= 0) return alert('Giá phải là một số lớn hơn 0');
+
+        if (year) {
+            const yearNum = Number(year);
+            if (isNaN(yearNum) || yearNum < 2010 || yearNum > 2025) return alert('Năm sản xuất phải nằm trong khoảng 2010 - 2025');
+        }
+
+        if (categoryId === 1 && seats) {
+            const seatsNum = Number(seats);
+            if (isNaN(seatsNum) || seatsNum < 2 || seatsNum > 7) return alert('Số chỗ hợp lệ: 2 - 7');
+        }
+
+        if (categoryId === 3 && cycleCount) {
+            const cycleNum = Number(cycleCount);
+            if (isNaN(cycleNum) || cycleNum < 0) return alert('Số chu kỳ không hợp lệ');
+        }
+
         setLoading(true);
         try {
             const listingData: any = {
                 title,
                 description,
-                price: Number(price),
-                categoryId,
+                price: priceNum,
+                category: { categoryId }, // backend expects nested category object
                 brand,
                 model,
                 year: year ? Number(year) : undefined,
                 color,
                 vehicleType,
-                mileage: mileage ? Number(mileage) : undefined,
+                mileage: mileage ? String(mileage) : undefined,
                 batteryCapacity,
                 voltage,
                 batteryLifeRemaining,
@@ -135,7 +154,10 @@ export default function Navbar() {
                 body: formData,
             });
 
-            if (!res.ok) throw new Error('Đăng bài thất bại!');
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Đăng bài thất bại!');
+            }
             alert('🎉 Đăng bài thành công, đang chờ duyệt!');
             setShowCreateModal(false);
             setFiles([]);
