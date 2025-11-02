@@ -14,11 +14,9 @@ const CATEGORIES = [
 export default function Navbar() {
     const router = useRouter();
 
-    // State quản lý người dùng
+    // User & state
     const [userData, setUserData] = useState<any | null>(null);
     const [isClient, setIsClient] = useState(false);
-
-    // UI state
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showNotify, setShowNotify] = useState(false);
@@ -42,7 +40,7 @@ export default function Navbar() {
     const [previews, setPreviews] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // ✅ Kiểm tra localStorage khi component mount
+    // ✅ Kiểm tra localStorage khi mount
     useEffect(() => {
         setIsClient(true);
         const stored = localStorage.getItem('userData');
@@ -138,11 +136,14 @@ export default function Navbar() {
         }
     };
 
-    if (!isClient) return null; // ✅ tránh lỗi SSR khi truy cập localStorage
+    if (!isClient) return null; // tránh lỗi SSR
+
+    // ✅ Xác định link hồ sơ dựa trên role
+    const profileLink =
+        userData?.role === 'ADMIN' || userData?.role === 'MANAGER' ? '/admin' : '/profile';
 
     return (
         <>
-            {/* --- Navbar --- */}
             <nav className="w-full bg-yellow-400 border-b border-gray-200 shadow-sm px-6 py-3 flex items-center justify-between relative">
                 {/* Logo */}
                 <div
@@ -166,7 +167,7 @@ export default function Navbar() {
 
                 {/* Right section */}
                 <div className="flex items-center gap-4 relative">
-                    {/* 🔔 Notification (chỉ hiện khi user login) */}
+                    {/* 🔔 Notification */}
                     {userData && (
                         <div className="relative">
                             <button
@@ -188,16 +189,14 @@ export default function Navbar() {
                                         transition={{ duration: 0.2 }}
                                         className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-md p-3 z-[999]"
                                     >
-                                        <p className="text-sm text-gray-700">
-                                            Bạn chưa có thông báo nào
-                                        </p>
+                                        <p className="text-sm text-gray-700">Bạn chưa có thông báo nào</p>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
                     )}
 
-                    {/* ➕ Đăng bài (chỉ hiện khi user login) */}
+                    {/* ➕ Đăng bài */}
                     {userData && (
                         <button
                             onClick={() => setShowCreateModal(true)}
@@ -208,7 +207,7 @@ export default function Navbar() {
                         </button>
                     )}
 
-                    {/* 👤 User menu / Đăng nhập */}
+                    {/* 👤 User */}
                     {!userData ? (
                         <button
                             onClick={() => router.push('/login')}
@@ -240,7 +239,7 @@ export default function Navbar() {
                                         className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-md overflow-hidden z-[999]"
                                     >
                                         <button
-                                            onClick={() => router.push('/profile')}
+                                            onClick={() => router.push(profileLink)}
                                             className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                                         >
                                             Hồ sơ
