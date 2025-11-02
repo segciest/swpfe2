@@ -1,14 +1,38 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
 
 export default function AdminDashboard() {
     const [listings, setListings] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [selected, setSelected] = useState<any | null>(null);
+    const router = useRouter();
 
-    // Gọi API lấy danh sách bài pending
+    // ✅ Kiểm tra quyền truy cập admin
+    useEffect(() => {
+        const stored = localStorage.getItem('userData');
+        if (!stored) {
+            router.push('/'); // chưa đăng nhập → về trang chủ
+            return;
+        }
+
+        try {
+            const userData = JSON.parse(stored);
+            const role = userData.role?.roleName || userData.role;
+
+            // chỉ cho phép ADMIN hoặc MANAGER
+            if (role !== 'ADMIN' && role !== 'MANAGER') {
+                alert('🚫 Bạn không có quyền truy cập trang này!');
+                router.push('/');
+            }
+        } catch (err) {
+            router.push('/');
+        }
+    }, [router]);
+
+    // 🚀 Hàm lấy danh sách bài pending
     const fetchListings = async () => {
         try {
             setLoading(true);
@@ -27,12 +51,11 @@ export default function AdminDashboard() {
         fetchListings();
     }, []);
 
+    // ✅ Duyệt bài
     const handleVerify = async (id: string) => {
         if (!confirm('Xác nhận duyệt bài này?')) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/approve/${id}`, {
-                method: 'PUT',
-            });
+            const res = await fetch(`http://localhost:8080/api/listing/approve/${id}`, { method: 'PUT' });
             if (!res.ok) throw new Error('Không thể duyệt bài!');
             alert('✅ Duyệt thành công!');
             fetchListings();
@@ -41,12 +64,11 @@ export default function AdminDashboard() {
         }
     };
 
+    // ❌ Từ chối bài
     const handleDeny = async (id: string) => {
         if (!confirm('Bạn có chắc muốn từ chối bài đăng này?')) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}`, {
-                method: 'PUT',
-            });
+            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}`, { method: 'PUT' });
             if (!res.ok) throw new Error('Không thể từ chối!');
             alert('❌ Từ chối thành công!');
             fetchListings();
@@ -128,7 +150,7 @@ export default function AdminDashboard() {
                 )}
             </main>
 
-            {/* Modal xem chi tiết */}
+            {/* Modal chi tiết */}
             {selected && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white w-[600px] rounded-xl p-6 relative shadow-lg max-h-[80vh] overflow-auto">
