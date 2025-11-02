@@ -18,6 +18,7 @@ export default function Navbar() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showNotify, setShowNotify] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
 
     // Common fields
     const [categoryId, setCategoryId] = useState<number>(1);
@@ -52,6 +53,23 @@ export default function Navbar() {
             setUserData(JSON.parse(stored));
         }
     }, []);
+
+    // 🔔 Gọi API lấy danh sách thông báo khi mở menu thông báo
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            if (!userData || !showNotify) return;
+            try {
+                const res = await fetch(`http://localhost:8080/api/notification/${userData.userId}`);
+                if (!res.ok) throw new Error("Không thể tải thông báo");
+                const data = await res.json();
+                setNotifications(data);
+            } catch (err) {
+                console.error("Lỗi khi tải thông báo:", err);
+                setNotifications([]);
+            }
+        };
+        fetchNotifications();
+    }, [showNotify, userData]);
 
     const handleLogout = () => {
         localStorage.removeItem('userData');
@@ -135,7 +153,7 @@ export default function Navbar() {
     return (
         <>
             {/* NAVBAR */}
-            <nav className="w-full bg-yellow-400 border-b border-gray-200 shadow-sm px-6 py-3 flex items-center justify-between">
+            <nav className="w-full bg-yellow-400 border-b border-gray-200 shadow-sm px-6 py-3 flex items-center justify-between relative">
                 <div onClick={() => router.push('/')} className="font-bold text-lg text-gray-800 cursor-pointer">
                     ⚡ EV Shop
                 </div>
@@ -160,6 +178,38 @@ export default function Navbar() {
                         >
                             <Bell className="w-5 h-5 text-gray-700" />
                         </button>
+                    )}
+
+                    {/* MENU THÔNG BÁO */}
+                    {showNotify && (
+                        <div className="absolute right-20 top-12 w-80 bg-white border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                            <div className="px-4 py-2 border-b font-semibold text-gray-800 flex justify-between items-center">
+                                🔔 Thông báo
+                                <button
+                                    onClick={() => setShowNotify(false)}
+                                    className="text-gray-500 hover:text-gray-700 text-sm"
+                                >
+                                    Đóng
+                                </button>
+                            </div>
+
+                            {notifications.length === 0 ? (
+                                <div className="p-4 text-sm text-gray-600 text-center">
+                                    Hiện chưa có thông báo mới.
+                                </div>
+                            ) : (
+                                <ul className="divide-y divide-gray-200">
+                                    {notifications.map((noti) => (
+                                        <li key={noti.notificationId} className="p-3 hover:bg-gray-50">
+                                            <p className="text-sm text-gray-800">{noti.message}</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {new Date(noti.createdTime).toLocaleString('vi-VN')}
+                                            </p>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                     )}
 
                     {/* Đăng bài */}
@@ -248,6 +298,7 @@ export default function Navbar() {
                                 📝 Đăng tin mới
                             </h2>
 
+                            {/* Form đăng bài */}
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* Danh mục */}
                                 <div className="flex justify-center gap-3 mb-4">
@@ -257,8 +308,8 @@ export default function Navbar() {
                                             type="button"
                                             onClick={() => setCategoryId(cat.id)}
                                             className={`px-4 py-2 rounded-full font-medium border transition ${categoryId === cat.id
-                                                ? 'bg-yellow-400 border-yellow-500 text-gray-900 shadow'
-                                                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                                                    ? 'bg-yellow-400 border-yellow-500 text-gray-900 shadow'
+                                                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
                                                 }`}
                                         >
                                             {cat.name}
