@@ -125,7 +125,7 @@ export default function Navbar() {
             if (categoryId === 3) listingData.cycleCount = cycleCount ? Number(cycleCount) : undefined;
 
             const formData = new FormData();
-            formData.append('listing', new Blob([JSON.stringify(listingData)], { type: 'application/json' }));
+            formData.append('listing', JSON.stringify(listingData));
             files.forEach((file) => formData.append('files', file));
 
             const token = userData?.token;
@@ -226,7 +226,7 @@ export default function Navbar() {
                     {/* User */}
                     {!userData ? (
                         <button
-                            onClick={() => router.push('/login')}
+                            onClick={() => router.push('/login-register')}
                             className="flex items-center space-x-1 bg-white px-3 py-1 rounded-full shadow hover:bg-gray-100"
                         >
                             <LogIn className="w-5 h-5 text-gray-700" />
@@ -308,8 +308,8 @@ export default function Navbar() {
                                             type="button"
                                             onClick={() => setCategoryId(cat.id)}
                                             className={`px-4 py-2 rounded-full font-medium border transition ${categoryId === cat.id
-                                                    ? 'bg-yellow-400 border-yellow-500 text-gray-900 shadow'
-                                                    : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                                                ? 'bg-yellow-400 border-yellow-500 text-gray-900 shadow'
+                                                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
                                                 }`}
                                         >
                                             {cat.name}
