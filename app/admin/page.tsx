@@ -55,7 +55,7 @@ export default function AdminDashboard() {
     const handleVerify = async (id: string) => {
         if (!confirm('Xác nhận duyệt bài này?')) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/approve/${id}`, { method: 'PUT' });
+            const res = await fetch(`http://localhost:8080/api/listing/approve/${id}`, { method: 'POST' });
             if (!res.ok) throw new Error('Không thể duyệt bài!');
             alert('✅ Duyệt thành công!');
             fetchListings();
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
     const handleDeny = async (id: string) => {
         if (!confirm('Bạn có chắc muốn từ chối bài đăng này?')) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}`, { method: 'PUT' });
+            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}`, { method: 'POST' });
             if (!res.ok) throw new Error('Không thể từ chối!');
             alert('❌ Từ chối thành công!');
             fetchListings();

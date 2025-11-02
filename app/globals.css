@@ -27,3 +27,8 @@ body {
   @apply bg-gray-50 text-gray-900;
 }
 
+@layer components {
+  .input {
+    @apply border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-300 transition;
+  }
+}
