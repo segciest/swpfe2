@@ -1,3 +1,4 @@
+
 import { getListingDetail } from "@/lib/getListingDetail";
 
 export default async function ListingDetail({ params }: { params: Promise<{ id: string }> }) {

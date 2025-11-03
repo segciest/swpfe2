@@ -36,12 +36,19 @@ export default function AdminDashboard() {
     const fetchListings = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:8080/api/listing/pending');
-            if (!res.ok) throw new Error('Lỗi khi tải dữ liệu!');
+            const stored = localStorage.getItem('userData');
+            const token = stored ? JSON.parse(stored).token : null;
+            const res = await fetch('http://localhost:8080/api/listing/pending', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Lỗi khi tải dữ liệu!');
+            }
             const data = await res.json();
             setListings(data);
         } catch (err: any) {
-            alert(err.message);
+            alert(err.message || 'Lỗi khi tải dữ liệu!');
         } finally {
             setLoading(false);
         }
@@ -55,12 +62,20 @@ export default function AdminDashboard() {
     const handleVerify = async (id: string) => {
         if (!confirm('Xác nhận duyệt bài này?')) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/approve/${id}`, { method: 'POST' });
-            if (!res.ok) throw new Error('Không thể duyệt bài!');
+            const stored = localStorage.getItem('userData');
+            const token = stored ? JSON.parse(stored).token : null;
+            const res = await fetch(`http://localhost:8080/api/listing/approve/${id}`, {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Không thể duyệt bài!');
+            }
             alert('✅ Duyệt thành công!');
             fetchListings();
         } catch (err: any) {
-            alert(err.message);
+            alert(err.message || 'Không thể duyệt bài!');
         }
     };
 
@@ -68,12 +83,20 @@ export default function AdminDashboard() {
     const handleDeny = async (id: string) => {
         if (!confirm('Bạn có chắc muốn từ chối bài đăng này?')) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}`, { method: 'POST' });
-            if (!res.ok) throw new Error('Không thể từ chối!');
+            const stored = localStorage.getItem('userData');
+            const token = stored ? JSON.parse(stored).token : null;
+            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}`, {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Không thể từ chối!');
+            }
             alert('❌ Từ chối thành công!');
             fetchListings();
         } catch (err: any) {
-            alert(err.message);
+            alert(err.message || 'Không thể từ chối!');
         }
     };
 

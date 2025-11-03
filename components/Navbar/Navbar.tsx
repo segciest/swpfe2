@@ -59,7 +59,7 @@ export default function Navbar() {
         const fetchNotifications = async () => {
             if (!userData || !showNotify) return;
             try {
-                const res = await fetch(`http://localhost:8080/api/notification/${userData.userId}`);
+                const res = await fetch(`http://localhost:8080/api/notifications/${userData.userId}`);
                 if (!res.ok) throw new Error("Không thể tải thông báo");
                 const data = await res.json();
                 setNotifications(data);
