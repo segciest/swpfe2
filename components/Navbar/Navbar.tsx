@@ -102,7 +102,7 @@ export default function Navbar() {
         if (!userData) return alert('Vui lòng đăng nhập để đăng bài!');
         if (files.length === 0) return alert('Vui lòng chọn ít nhất 1 ảnh!');
 
-        // Client-side validation to avoid server-side 400s
+        // Client-side validation
         const priceNum = Number(price);
         if (isNaN(priceNum) || priceNum <= 0) return alert('Giá phải là một số lớn hơn 0');
 
@@ -127,7 +127,7 @@ export default function Navbar() {
                 title,
                 description,
                 price: priceNum,
-                category: { categoryId }, // backend expects nested category object
+                category: { categoryId },
                 brand,
                 model,
                 year: year ? Number(year) : undefined,
@@ -244,6 +244,14 @@ export default function Navbar() {
                             <span className="text-sm text-gray-800 font-medium">Đăng bài</span>
                         </button>
                     )}
+
+                    {/* 🌟 Gói đăng ký */}
+                    <button
+                        onClick={() => router.push('/subscription')}
+                        className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow hover:bg-gray-100"
+                    >
+                        <span className="text-sm text-gray-800 font-medium">🌟 Gói đăng ký</span>
+                    </button>
 
                     {/* User */}
                     {!userData ? (
