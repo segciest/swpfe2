@@ -13,10 +13,11 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
                 <div>
                     <div className="relative">
                         <img
-                            src={data.image || "/no-image.png"}
+                            src={data.imageUrls?.[0] || "/no-image.png"}
                             alt={data.title}
                             className="rounded-xl w-full h-[420px] object-cover"
                         />
+
                     </div>
 
                     {/* thumbnail nhỏ (nếu có nhiều ảnh) */}
