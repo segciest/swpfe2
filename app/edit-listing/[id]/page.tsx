@@ -37,8 +37,10 @@ export default function EditListingPage({
     useEffect(() => {
         const fetchListing = async () => {
             try {
-                const res = await getListingDetail(id);
+                console.log(id);
 
+                const res = await getListingDetail(id);
+                console.log(res)
                 // const res = await fetch(`http://localhost:8080/api/listing/${id}`);
                 // const res = await fetch(`https://mocki.io/v1/4c203627-22ae-43e2-9645-b9db37be5a1e`);
                 const data = await res.json();
