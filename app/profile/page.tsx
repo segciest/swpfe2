@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Phone, Mail, Calendar, MapPin, BadgeCheck, Crown } from "lucide-react";
+import {
+    User,
+    Phone,
+    Mail,
+    Calendar,
+    MapPin,
+    BadgeCheck,
+    Crown,
+} from "lucide-react";
 
 interface Role {
     roleId: number;
@@ -34,8 +42,18 @@ interface UserProfile {
     verifiedCode: string | null;
 }
 
+interface Listing {
+    listingId: string;
+    title: string;
+    price: number;
+    imageUrls: string[];
+}
+
 export default function ProfilePage() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [listings, setListings] = useState<Listing[]>([]);
+    const [showListings, setShowListings] = useState(false);
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -48,15 +66,36 @@ export default function ProfilePage() {
         const { userId, token } = JSON.parse(stored);
 
         fetch(`http://localhost:8080/api/users/${userId}`, {
-            // fetch(`https://mocki.io/v1/0dbb60e7-c1bf-478d-9349-7ab7414bfdeb`, {
-
-
+            // fetch(`https://mocki.io/v1/21423e7d-f4e8-40c5-98c1-969aa7a0ec0a`, {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then((res) => res.json())
             .then((data) => setProfile(data))
             .catch((err) => console.error("Lỗi tải user profile:", err));
     }, [router]);
+
+    // ✅ Gọi API lấy danh sách bài đăng của user
+    const fetchUserListings = async () => {
+        const stored = localStorage.getItem("userData");
+        if (!stored) return alert("Bạn cần đăng nhập!");
+        const { token } = JSON.parse(stored);
+
+        try {
+            setLoading(true);
+            const res = await fetch("http://localhost:8080/api/listing/seller", {
+                // const res = await fetch("https://mocki.io/v1/77c1921e-afc9-4c75-ab0b-4bf19ce48641", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error("Không thể tải bài đăng!");
+            const data = await res.json();
+            setListings(data);
+            setShowListings(true);
+        } catch (err: any) {
+            alert(err.message || "Lỗi khi tải bài đăng!");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (!profile)
         return <div className="p-6 text-gray-500">Đang tải thông tin người dùng...</div>;
@@ -76,12 +115,16 @@ export default function ProfilePage() {
                 />
 
                 {/* Tên và trạng thái */}
-                <h2 className="text-xl font-semibold text-gray-800">{profile.userName}</h2>
+                <h2 className="text-xl font-semibold text-gray-800">
+                    {profile.userName}
+                </h2>
                 <p
                     className={`mt-1 text-sm font-medium ${profile.userStatus === "ACTIVE" ? "text-green-600" : "text-gray-500"
                         }`}
                 >
-                    {profile.userStatus === "ACTIVE" ? "Đang hoạt động" : "Không hoạt động"}
+                    {profile.userStatus === "ACTIVE"
+                        ? "Đang hoạt động"
+                        : "Không hoạt động"}
                 </p>
 
                 {/* Gói đăng ký */}
@@ -129,6 +172,14 @@ export default function ProfilePage() {
                     <button className="border py-2 rounded-lg hover:bg-gray-100">
                         📤 Chia sẻ trang của bạn
                     </button>
+
+                    {/* ✅ Nút mới: Quản lý bài đăng */}
+                    <button
+                        onClick={fetchUserListings}
+                        className="border py-2 rounded-lg hover:bg-gray-100 text-orange-600 font-medium"
+                    >
+                        🛒 Quản lý bài đăng
+                    </button>
                 </div>
 
                 {/* Xác thực */}
@@ -138,32 +189,88 @@ export default function ProfilePage() {
                 </div>
             </div>
 
-            {/* --- CỘT PHẢI: Tin đăng / nội dung --- */}
+            {/* --- CỘT PHẢI: Danh sách bài đăng --- */}
             <div className="flex-1 bg-white border rounded-2xl shadow-sm p-6">
-                <div className="flex justify-between items-center border-b pb-3 mb-4">
-                    <div className="flex gap-6 font-semibold text-gray-700">
-                        <span className="border-b-2 border-orange-500 pb-1 text-orange-500">
-                            Đang hiển thị (0)
-                        </span>
-                        <span className="hover:text-orange-500 cursor-pointer">Đã bán (0)</span>
+                {loading ? (
+                    <div className="text-center text-gray-500 py-10">
+                        Đang tải bài đăng...
                     </div>
-                    <button className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
-                        Đăng tin ngay
-                    </button>
-                </div>
+                ) : showListings ? (
+                    <>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-semibold text-gray-800">
+                                🛍️ Danh sách bài đăng ({listings.length})
+                            </h2>
+                            <button
+                                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+                                onClick={() => setShowListings(false)}
+                            >
+                                Ẩn danh sách
+                            </button>
+                        </div>
 
-                {/* Khi chưa có tin đăng */}
-                <div className="flex flex-col items-center justify-center text-gray-500 py-20">
-                    <img
-                        src="https://static.chotot.com/storage/chotot-icons/svg/no-ads.svg"
-                        alt="no-ads"
-                        className="w-24 h-24 opacity-70 mb-4"
-                    />
-                    <p className="text-lg">Bạn chưa có tin đăng nào</p>
-                    <button className="mt-4 bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600">
-                        ĐĂNG TIN NGAY
-                    </button>
-                </div>
+                        {listings.length === 0 ? (
+                            <div className="text-gray-500 text-center py-10">
+                                Bạn chưa có bài đăng nào.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {listings.map((item) => (
+                                    <div
+                                        key={item.listingId}
+                                        className="border rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition group"
+                                    >
+                                        {/* Ảnh */}
+                                        <div className="relative w-full h-48 overflow-hidden">
+                                            <img
+                                                src={item.imageUrls?.[0] || "/no-image.png"}
+                                                alt={item.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                        </div>
+
+                                        {/* Nội dung */}
+                                        <div className="p-4 flex flex-col justify-between h-[140px]">
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-gray-800 truncate">
+                                                    {item.title}
+                                                </h3>
+                                                <p className="text-orange-600 font-bold mt-1 text-base">
+                                                    {item.price.toLocaleString()} ₫
+                                                </p>
+                                            </div>
+
+                                            {/* Nút chỉnh sửa */}
+                                            <button
+                                                onClick={() =>
+                                                    router.push(`/edit-listing/${item.listingId}`)
+                                                }
+                                                className="mt-3 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium py-2 rounded-lg transition"
+                                            >
+                                                ✏️ Chỉnh sửa bài đăng
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center text-gray-500 py-20">
+                        <img
+                            src="https://static.chotot.com/storage/chotot-icons/svg/no-ads.svg"
+                            alt="no-ads"
+                            className="w-24 h-24 opacity-70 mb-4"
+                        />
+                        <p className="text-lg">Bạn chưa có tin đăng nào</p>
+                        <button
+                            className="mt-4 bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600"
+                            onClick={fetchUserListings}
+                        >
+                            📄 XEM DANH SÁCH BÀI ĐĂNG
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
