@@ -31,8 +31,13 @@ const SignInForm = () => {
             if (!res.ok) throw new Error(data.message || 'Login failed');
 
             // Lưu thông tin user vào localStorage để Navbar cập nhật
-            // API của bạn CẦN trả về userName
-            const stored = { token: data.token, userId: data.userId, userName: data.userName || data.email }; 
+            // API trả về: token, userId, userName, role
+            const stored = { 
+                token: data.token, 
+                userId: data.userId, 
+                userName: data.userName || data.email,
+                role: data.role // ✅ Thêm role vào localStorage
+            }; 
             localStorage.setItem('userData', JSON.stringify(stored));
 
             setMessage('Đăng nhập thành công!');

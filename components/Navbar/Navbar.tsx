@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, UserCircle, LogOut, LogIn, PlusCircle, X } from 'lucide-react';
+import { Bell, UserCircle, LogOut, LogIn, PlusCircle, X, Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const CATEGORIES = [
@@ -50,7 +50,16 @@ export default function Navbar() {
     useEffect(() => {
         const stored = localStorage.getItem('userData');
         if (stored) {
-            setUserData(JSON.parse(stored));
+            const parsedData = JSON.parse(stored);
+            console.log('📌 userData từ localStorage:', parsedData);
+            // ✅ Đảm bảo role được chuyển đổi đúng nếu API trả về role_id
+            if (parsedData.role_id === 1 || parsedData.roleId === 1) {
+                parsedData.role = 'ADMIN';
+            } else if (parsedData.role_id === 2 || parsedData.roleId === 2) {
+                parsedData.role = 'MANAGER';
+            }
+            console.log('✅ userData sau khi xử lý:', parsedData);
+            setUserData(parsedData);
         }
     }, []);
 
@@ -245,6 +254,15 @@ export default function Navbar() {
                         </button>
                     )}
 
+                    {/* ❤️ Yêu thích - Hiển thị cho tất cả */}
+                    <button
+                        onClick={() => router.push('/favorites')}
+                        className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow hover:bg-gray-100"
+                    >
+                        <Heart className="w-5 h-5 text-red-500" />
+                        <span className="text-sm text-gray-800 font-medium">Yêu thích</span>
+                    </button>
+
                     {/* 🌟 Gói đăng ký */}
                     <button
                         onClick={() => router.push('/subscription')}
@@ -268,11 +286,11 @@ export default function Navbar() {
                                 onClick={() => setShowUserMenu(!showUserMenu)}
                                 className="flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow hover:bg-gray-100"
                             >
-                                <UserCircle className="w-5 h-5 text-gray-700" />
-                                <span className="text-sm font-medium">{userData.userName}</span>
+                                <UserCircle className="w-5 h-5 text-blue-600" />
+                                <span className="text-sm font-bold text-gray-800">{userData.userName}</span>
                             </button>
                             {showUserMenu && (
-                                <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-md overflow-hidden z-50">
+                                <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md overflow-hidden z-50">
                                     <button
                                         onClick={() =>
                                             router.push(
@@ -281,16 +299,26 @@ export default function Navbar() {
                                                     : '/profile'
                                             )
                                         }
-                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                     >
                                         {userData.role === 'ADMIN' || userData.role === 'MANAGER'
                                             ? 'Admin Dashboard'
                                             : 'Hồ sơ'}
                                     </button>
 
+                                    {/* Báo Cáo Doanh Thu - Chỉ hiển thị cho ADMIN */}
+                                    {userData.role === 'ADMIN' && (
+                                        <button
+                                            onClick={() => router.push('/admin/chart')}
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            Báo Cáo Doanh Thu
+                                        </button>
+                                    )}
+
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                     >
                                         <LogOut className="w-4 h-4" /> Đăng xuất
                                     </button>
