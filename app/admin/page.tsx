@@ -107,8 +107,8 @@ export default function AdminDashboard() {
     };
 
     // ✅ Duyệt / từ chối báo cáo
-    const handleReportAction = async (id: number, status: 'APPROVED' | 'REJECTED') => {
-        if (!confirm(`Xác nhận ${status === 'APPROVED' ? 'duyệt' : 'từ chối'} báo cáo này?`)) return;
+    const handleReportAction = async (id: number, status: 'RESOLVED' | 'REJECTED') => {
+        if (!confirm(`Xác nhận ${status === 'RESOLVED' ? 'duyệt (đã xử lý)' : 'từ chối'} báo cáo này?`)) return;
         try {
             const token = JSON.parse(localStorage.getItem('userData') || '{}').token;
             const res = await fetch(
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
                 { method: 'PUT', headers: token ? { Authorization: `Bearer ${token}` } : {} }
             );
             if (!res.ok) throw new Error(await res.text());
-            alert(status === 'APPROVED' ? '✅ Báo cáo đã được duyệt!' : '🚫 Báo cáo đã bị từ chối!');
+            alert(status === 'RESOLVED' ? '✅ Báo cáo đã được xử lý!' : '🚫 Báo cáo đã bị từ chối!');
             fetchReports();
         } catch (err: any) {
             alert(err.message || 'Không thể cập nhật trạng thái báo cáo!');
@@ -132,8 +132,8 @@ export default function AdminDashboard() {
                     <button
                         onClick={() => setActiveTab('listings')}
                         className={`w-full text-left px-4 py-2 rounded-md font-medium ${activeTab === 'listings'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'hover:bg-gray-200'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'hover:bg-gray-200'
                             }`}
                     >
                         Duyệt bài đăng
@@ -141,8 +141,8 @@ export default function AdminDashboard() {
                     <button
                         onClick={() => setActiveTab('reports')}
                         className={`w-full text-left px-4 py-2 rounded-md font-medium ${activeTab === 'reports'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'hover:bg-gray-200'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'hover:bg-gray-200'
                             }`}
                     >
                         Duyệt báo cáo
@@ -247,25 +247,26 @@ export default function AdminDashboard() {
                                                 </h3>
                                             </div>
                                             <p className="text-sm text-gray-700 mb-1">
-                                                <strong>Người báo cáo:</strong>{' '}
-                                                {r.reporter?.userName || 'Ẩn danh'}
+                                                <strong>Người báo cáo:</strong> {r.reporterName || 'Ẩn danh'}
                                             </p>
                                             <p className="text-sm text-gray-700 mb-1">
-                                                <strong>Bài đăng:</strong>{' '}
-                                                {r.listing?.title || 'Không xác định'}
+                                                <strong>Email:</strong> {r.reporterEmail}
+                                            </p>
+                                            <p className="text-sm text-gray-700 mb-1">
+                                                <strong>Bài đăng:</strong> {r.listingTitle || 'Không xác định'}
                                             </p>
                                             <p className="text-sm text-gray-700 mb-2">
                                                 <strong>Lý do:</strong> {r.reason}
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                                Ngày: {new Date(r.createAt).toLocaleString('vi-VN')}
+                                                Ngày: {new Date(r.createdAt).toLocaleString('vi-VN')}
                                             </p>
                                         </div>
 
                                         <div className="flex justify-end gap-2 mt-4">
                                             <button
                                                 onClick={() =>
-                                                    handleReportAction(r.reportId, 'APPROVED')
+                                                    handleReportAction(r.reportId, 'RESOLVED')
                                                 }
                                                 className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
                                             >
