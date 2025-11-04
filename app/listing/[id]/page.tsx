@@ -18,20 +18,22 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
                         />
                     </div>
 
-                    {/* thumbnail nhỏ */}
-                    <div className="flex gap-3 mt-4 overflow-x-auto">
-                        {[data.image, ...(data.imageUrls || [])].map((img: string, i: number) => (
-                            <img
-                                key={i}
-                                src={img || "/no-image.png"}
-                                alt={`thumb-${i}`}
-                                className="w-20 h-20 rounded-lg border hover:scale-105 transition"
-                            />
-                        ))}
-                    </div>
+                    {/* thumbnail nhỏ (nếu có nhiều ảnh) */}
+                    {data.imageUrls?.length > 0 && (
+                        <div className="flex gap-3 mt-4 overflow-x-auto">
+                            {data.imageUrls.map((img: string, i: number) => (
+                                <img
+                                    key={i}
+                                    src={img || "/no-image.png"}
+                                    alt={`thumb-${i}`}
+                                    className="w-20 h-20 rounded-lg border hover:scale-105 transition"
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                {/* --- CỘT PHẢI: THÔNG TIN --- */}
+                {/* --- CỘT PHẢI: THÔNG TIN CHI TIẾT --- */}
                 <div>
                     <h1 className="text-2xl font-bold mb-2">{data.title}</h1>
                     <p className="text-gray-500 mb-2">
@@ -39,29 +41,35 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
                     </p>
 
                     <p className="text-3xl font-bold text-red-600 mb-3">
-                        {data.price.toLocaleString()} đ
+                        {data.price ? data.price.toLocaleString("vi-VN") + " ₫" : "Liên hệ"}
                     </p>
 
                     <div className="flex items-center gap-2 text-gray-500 text-sm mb-4">
-                        <span>📍 Cmt8, TP.HCM</span>•<span>Đăng {new Date(data.createdAt).toLocaleDateString()}</span>
+                        <span>📍 TP.HCM</span>
+                        <span>•</span>
+                        <span>Đăng {new Date(data.createdAt).toLocaleDateString("vi-VN")}</span>
                     </div>
 
-                    {/* Thanh giá thị trường giả lập */}
-                    {/* <div className="bg-gray-50 p-3 rounded-lg border text-sm text-gray-600 mb-4">
-                        <p className="font-semibold mb-2">Khoảng giá thị trường</p>
-                        <div className="flex items-center justify-between">
-                            <span>12.9tr</span>
-                            <div className="relative flex-1 mx-2 h-2 bg-gray-200 rounded-full">
-                                <div className="absolute left-[55%] top-[-3px] w-4 h-4 bg-blue-500 rounded-full"></div>
-                            </div>
-                            <span>15.7tr</span>
-                        </div>
-                    </div> */}
+                    {/* Thông số nhanh */}
+                    <div className="bg-gray-50 rounded-lg p-4 mb-5 text-sm text-gray-700 grid grid-cols-2 gap-x-4 gap-y-2 border">
+                        {data.color && <p><strong>Màu sắc:</strong> {data.color}</p>}
+                        {data.seats && <p><strong>Số chỗ:</strong> {data.seats}</p>}
+                        {data.mileage && <p><strong>Quãng đường:</strong> {data.mileage}</p>}
+                        {data.batteryCapacity && <p><strong>Dung lượng pin:</strong> {data.batteryCapacity}</p>}
+                        {data.cycleCount && <p><strong>Chu kỳ sạc:</strong> {data.cycleCount}</p>}
+                        {data.voltage && <p><strong>Điện áp:</strong> {data.voltage}</p>}
+                        {data.capacity && <p><strong>Công suất:</strong> {data.capacity}</p>}
+                        {data.warrantyInfo && <p><strong>Bảo hành:</strong> {data.warrantyInfo}</p>}
+                        {data.batteryLifeRemaining && (
+                            <p><strong>Tuổi thọ pin còn lại:</strong> {data.batteryLifeRemaining}</p>
+                        )}
+                        <p><strong>Loại xe:</strong> {data.category?.categoryName || "Không xác định"}</p>
+                    </div>
 
                     {/* Nút liên hệ */}
                     <div className="flex gap-3 mb-6">
-                        <button className="flex-1 border border-gray-300 py-3 rounded-lg font-medium">
-                            Hiện số 090690****
+                        <button className="flex-1 border border-gray-300 py-3 rounded-lg font-medium hover:bg-gray-50">
+                            ☎️ Gọi {data.seller?.phone || data.contact || "ẩn"}
                         </button>
                         <button className="flex-1 bg-yellow-400 hover:bg-yellow-500 py-3 rounded-lg font-semibold">
                             💬 Chat
@@ -69,33 +77,44 @@ export default async function ListingDetail({ params }: { params: Promise<{ id: 
                     </div>
 
                     {/* Thông tin người bán */}
-                    <div className="flex items-center justify-between border-t pt-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-yellow-300 flex items-center justify-center font-bold text-gray-700">
-                                {data.seller.userName[0]}
+                    {data.seller && (
+                        <div className="flex items-center justify-between border-t pt-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-yellow-300 flex items-center justify-center font-bold text-gray-700">
+                                    {data.seller.userName[0]}
+                                </div>
+                                <div>
+                                    <p className="font-medium">{data.seller.userName}</p>
+                                    <p className="text-sm text-gray-500">{data.seller.subid?.subName}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-medium">{data.seller.userName}</p>
-                                <p className="text-sm text-gray-500">Hoạt động 2 giờ trước</p>
+                            <div className="text-right">
+                                <p className="text-sm text-gray-600">⭐ 5.0 (1 đánh giá)</p>
+                                <button
+                                    onClick={() => alert("Đi tới trang người bán")}
+                                    className="text-blue-600 text-sm hover:underline"
+                                >
+                                    Xem trang
+                                </button>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm">⭐ 5 (1 đánh giá)</p>
-                            <button className="text-blue-600 text-sm">Xem trang</button>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
             {/* --- PHẦN DƯỚI: MÔ TẢ + BÌNH LUẬN --- */}
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* MÔ TẢ */}
+                {/* MÔ TẢ CHI TIẾT */}
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
                     <h2 className="text-xl font-bold mb-3">Mô tả chi tiết</h2>
-                    <div
-                        className="prose max-w-none text-gray-700"
-                        dangerouslySetInnerHTML={{ __html: data.content }}
-                    />
+                    {data.content ? (
+                        <div
+                            className="prose max-w-none text-gray-700"
+                            dangerouslySetInnerHTML={{ __html: data.content }}
+                        />
+                    ) : (
+                        <p className="text-gray-500 italic">Chưa có mô tả chi tiết.</p>
+                    )}
                 </div>
 
                 {/* BÌNH LUẬN */}

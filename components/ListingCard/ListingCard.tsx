@@ -17,6 +17,43 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   const [liked, setLiked] = useState(false);
   const [reported, setReported] = useState(false);
 
+  // ✅ Hàm toggle yêu thích (gọi API backend)
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const userData = localStorage.getItem("userData");
+    if (!userData) {
+      alert("Vui lòng đăng nhập trước khi thêm vào yêu thích!");
+      return;
+    }
+
+    const { token } = JSON.parse(userData);
+
+    try {
+      const res = await fetch(
+        `http://localhost:8080/api/favorite/toggle?listingId=${listing.listingId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.status === 401) {
+        alert("Token hết hạn hoặc không hợp lệ!");
+        return;
+      }
+
+      const result = await res.text(); // backend trả về string
+      console.log("Favorite API response:", result);
+
+      setLiked((prev) => !prev); // cập nhật UI
+    } catch (error) {
+      console.error("Lỗi khi toggle yêu thích:", error);
+      alert("Không thể thêm vào danh sách yêu thích!");
+    }
+  };
+
   return (
     <div
       onClick={() => router.push(`/listing/${listing.listingId}`)}
@@ -33,10 +70,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
         {/* ❤️ Tim + 🚩 Flag */}
         <div className="absolute top-2 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setLiked(!liked);
-            }}
+            onClick={handleToggleFavorite}
             className={`p-1.5 rounded-full bg-white shadow hover:scale-110 transition ${liked ? "text-red-500" : "text-gray-700"
               }`}
           >
