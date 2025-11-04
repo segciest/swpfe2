@@ -35,13 +35,19 @@ export default function EditListingPage({
 
     // ✅ Lấy thông tin bài đăng hiện tại
     useEffect(() => {
+
+        console.log("🟢 ID nhận được từ params:", id);
+        if (!id) {
+            alert("Không tìm thấy ID bài đăng!");
+            router.push("/profile");
+            return;
+        }
         const fetchListing = async () => {
             try {
                 console.log(id);
-
-                const res = await getListingDetail(id);
+                // const res = await getListingDetail(id);
+                const res = await fetch(`http://localhost:8080/api/listing/${id}`);
                 console.log(res)
-                // const res = await fetch(`http://localhost:8080/api/listing/${id}`);
                 // const res = await fetch(`https://mocki.io/v1/4c203627-22ae-43e2-9645-b9db37be5a1e`);
                 const data = await res.json();
                 setForm({
