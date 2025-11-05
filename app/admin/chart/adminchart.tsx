@@ -8,49 +8,42 @@ import { DollarSign, ShoppingCart, Users, CreditCard, AlertCircle } from 'lucide
 
 // Định nghĩa kiểu dữ liệu cho API stats
 interface DashboardStats {
-  totalRevenue: number;
-  activeListings: number;
+  // Users
   totalUsers: number;
-  totalPendingListing: number;
-  totalActiveUsers?: number;
-  bannedUser?: number;
-  totalBannedListing?: number;
+  activeUsers: number;
+  bannedUsers: number;
+  pendingUsers: number;
+  // Subscriptions
+  freeUsers: number;
+  basicUsers: number;
+  standardUsers: number;
+  premiumUsers: number;
+  vipUsers: number;
+  // Listings
+  activeListings: number;
+  pendingListings: number;
+  bannedListings: number;
+  // Reports
+  pendingReports: number;
+  resolvedReports: number;
+  rejectedReports: number;
+  // Revenue
+  totalRevenue: number;
+  monthlyRevenue: number;
 }
-
-// Dữ liệu giả cho biểu đồ (Vì API không cung cấp dữ liệu theo thời gian)
-const generateMockChartData = (days: number) => {
-  return Array.from({ length: days }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (days - 1 - i));
-    return {
-      name: days === 365 ? (2023 - (days - 1 - i)).toString() : `${date.getDate()}/${date.getMonth() + 1}`,
-      "Doanh thu": Math.floor(Math.random() * 5000000 + 1000000),
-      "Gói bán": Math.floor(Math.random() * 100 + 10),
-    };
-  });
-};
-
-const mockData7Days = generateMockChartData(7);
-const mockData30Days = generateMockChartData(30);
-
-// Dữ liệu phân tích theo loại gói
-const packageAnalysisData = [
-  { name: 'Gói Basic', value: 45, revenue: 22500000 },
-  { name: 'Gói Standard', value: 30, revenue: 45000000 },
-  { name: 'Gói Premium', value: 15, revenue: 52500000 },
-  { name: 'Gói VIP', value: 10, revenue: 80000000 },
-];
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function AdminChart() {
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [chartData, setChartData] = useState(mockData30Days);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [timeFilter, setTimeFilter] = useState<'7 Ngày' | '30 Ngày' | '1 Năm'>('30 Ngày');
   const [activeTab, setActiveTab] = useState<'report' | 'analysis'>('report');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revenueGrowthData, setRevenueGrowthData] = useState<any>(null);
+  const [subscriptionGrowthData, setSubscriptionGrowthData] = useState<any>(null);
 
   // Lấy dữ liệu thống kê từ API
   useEffect(() => {
@@ -64,24 +57,90 @@ export default function AdminChart() {
         }
         const { token } = JSON.parse(storedUserData);
 
-        const res = await fetch('http://localhost:8080/api/admin/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
 
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
+        const baseUrl = 'http://localhost:8080/api/admin/dashboard';
+
+        // Gọi các endpoint riêng biệt theo backend
+        const [usersRes, subscriptionsRes, listingsRes, reportsRes, revenueRes, revenueGrowthRes, subscriptionGrowthRes] = await Promise.all([
+          fetch(`${baseUrl}/users`, { headers }),
+          fetch(`${baseUrl}/subscriptions`, { headers }),
+          fetch(`${baseUrl}/listings`, { headers }),
+          fetch(`${baseUrl}/reports`, { headers }),
+          fetch(`${baseUrl}/revenue`, { headers }),
+          fetch(`${baseUrl}/revenue-growth`, { headers }),
+          fetch(`${baseUrl}/subscriptions-growth`, { headers })
+        ]);
+
+        if (!usersRes.ok || !subscriptionsRes.ok || !listingsRes.ok || !reportsRes.ok || !revenueRes.ok) {
+          if (usersRes.status === 401 || subscriptionsRes.status === 401) {
             throw new Error('Bạn không có quyền truy cập trang này.');
           }
-          throw new Error('Không thể tải dữ liệu.');
+          throw new Error('Không thể tải dữ liệu từ backend.');
         }
 
-        const data: DashboardStats = await res.json();
-        setStats(data);
+        const [usersData, subscriptionsData, listingsData, reportsData, revenueData, revenueGrowth, subscriptionGrowth] = await Promise.all([
+          usersRes.json(),
+          subscriptionsRes.json(),
+          listingsRes.json(),
+          reportsRes.json(),
+          revenueRes.json(),
+          revenueGrowthRes.json(),
+          subscriptionGrowthRes.json()
+        ]);
+
+        console.log('📊 Revenue Data:', revenueData);
+        console.log('💰 Total Revenue:', revenueData.totalRevenue);
+        console.log('📅 Monthly Revenue:', revenueData.monthlyRevenue);
+        console.log('📈 Revenue Growth:', revenueGrowth);
+        console.log('📊 Subscription Growth:', subscriptionGrowth);
+
+        // Lưu growth data để dùng cho chart
+        setRevenueGrowthData(revenueGrowth.revenue || {});
+        setSubscriptionGrowthData(subscriptionGrowth.subscriptions || {});
+
+        // Xử lý monthlyRevenue nếu là array
+        let monthlyRevenueValue = 0;
+        if (Array.isArray(revenueData.monthlyRevenue)) {
+          // Lấy tháng hiện tại (tháng cuối cùng trong array)
+          const currentMonth = revenueData.monthlyRevenue[revenueData.monthlyRevenue.length - 1];
+          monthlyRevenueValue = currentMonth?.value || currentMonth?.revenue || 0;
+        } else if (typeof revenueData.monthlyRevenue === 'number') {
+          monthlyRevenueValue = revenueData.monthlyRevenue;
+        }
+
+        // Gộp dữ liệu từ các endpoint
+        setStats({
+          // Users
+          totalUsers: usersData.totalUsers || 0,
+          activeUsers: usersData.activeUsers || 0,
+          bannedUsers: usersData.bannedUsers || 0,
+          pendingUsers: usersData.pendingUsers || 0,
+          // Subscriptions
+          freeUsers: subscriptionsData.freeUsers || 0,
+          basicUsers: subscriptionsData.basicUsers || 0,
+          standardUsers: subscriptionsData.standardUsers || 0,
+          premiumUsers: subscriptionsData.premiumUsers || 0,
+          vipUsers: subscriptionsData.vipUsers || 0,
+          // Listings
+          activeListings: listingsData.activeListings || 0,
+          pendingListings: listingsData.pendingListings || 0,
+          bannedListings: listingsData.bannedListings || 0,
+          // Reports
+          pendingReports: reportsData.pendingReports || 0,
+          resolvedReports: reportsData.resolvedReports || 0,
+          rejectedReports: reportsData.rejectedReports || 0,
+          // Revenue
+          totalRevenue: revenueData.totalRevenue || 0,
+          monthlyRevenue: monthlyRevenueValue
+        });
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi');
+        console.error('❌ Error fetching dashboard data:', err);
       } finally {
         setLoading(false);
       }
@@ -90,21 +149,39 @@ export default function AdminChart() {
     fetchDashboardData();
   }, [router]);
 
-  // Cập nhật dữ liệu biểu đồ khi filter thay đổi
+  // Cập nhật dữ liệu biểu đồ khi filter thay đổi hoặc khi có dữ liệu từ API
   useEffect(() => {
-    if (timeFilter === '7 Ngày') {
-      setChartData(mockData7Days);
-    } else if (timeFilter === '30 Ngày') {
-      setChartData(mockData30Days);
-    } else if (timeFilter === '1 Năm') {
-      const yearData = Array.from({ length: 12 }, (_, i) => ({
-        name: `T${i + 1}`,
-        "Doanh thu": Math.floor(Math.random() * 50000000 + 10000000),
-        "Gói bán": Math.floor(Math.random() * 1000 + 100),
-      }));
-      setChartData(yearData);
+    if (!revenueGrowthData || !subscriptionGrowthData) {
+      // Nếu chưa có dữ liệu thật, không làm gì
+      return;
     }
-  }, [timeFilter]);
+
+    let revenueArray: any[] = [];
+    let subscriptionArray: any[] = [];
+
+    if (timeFilter === '7 Ngày') {
+      revenueArray = revenueGrowthData.weekly || [];
+      subscriptionArray = subscriptionGrowthData.weekly || [];
+    } else if (timeFilter === '30 Ngày') {
+      revenueArray = revenueGrowthData.monthly || [];
+      subscriptionArray = subscriptionGrowthData.monthly || [];
+    } else if (timeFilter === '1 Năm') {
+      revenueArray = revenueGrowthData.yearly || [];
+      subscriptionArray = subscriptionGrowthData.yearly || [];
+    }
+
+    // Kết hợp dữ liệu revenue và subscription
+    const combinedData = revenueArray.map((revenue: any, index: number) => {
+      const subscription = subscriptionArray[index] || {};
+      return {
+        name: revenue.date || revenue.month || `${index + 1}`,
+        "Doanh thu": revenue.value || revenue.revenue || 0,
+        "Gói bán": subscription.value || subscription.count || 0
+      };
+    });
+
+    setChartData(combinedData);
+  }, [timeFilter, revenueGrowthData, subscriptionGrowthData]);
 
   // Hàm định dạng số tiền
   const formatCurrency = (value: number | undefined | null) => {
@@ -185,31 +262,142 @@ export default function AdminChart() {
               ))}
             </div>
 
-        {/* 4 THẺ THỐNG KÊ */}
+        {/* 4 THẺ THỐNG KÊ - Tổng quan */}
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">📊 Thống Kê Tổng Quan</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
-            title="Tổng Doanh Thu Gói"
+            title="Tổng Doanh Thu"
             value={`${formatCurrency(stats?.totalRevenue)} VNĐ`}
-            percentageChange="Từ bán gói đăng tin" 
+            percentageChange={`Tháng này: ${formatCurrency(stats?.monthlyRevenue)} VNĐ`}
             icon={<DollarSign className="w-6 h-6 text-green-500" />}
-          />
-          <StatCard
-            title="Tin Đang Chờ Duyệt"
-            value={formatCurrency(stats?.totalPendingListing)}
-            percentageChange="Tin cần xét duyệt"
-            icon={<ShoppingCart className="w-6 h-6 text-blue-500" />}
-          />
-          <StatCard
-            title="Tin Đang Hoạt Động"
-            value={formatCurrency(stats?.activeListings)}
-            percentageChange="Tin đã được duyệt"
-            icon={<CreditCard className="w-6 h-6 text-purple-500" />}
           />
           <StatCard
             title="Tổng Người Dùng"
             value={formatCurrency(stats?.totalUsers)}
-            percentageChange="Người dùng đăng ký"
-            icon={<Users className="w-6 h-6 text-orange-500" />}
+            percentageChange="Tất cả người dùng"
+            icon={<Users className="w-6 h-6 text-blue-500" />}
+          />
+          <StatCard
+            title="Tổng Tin Đăng"
+            value={formatCurrency((stats?.activeListings || 0) + (stats?.pendingListings || 0) + (stats?.bannedListings || 0))}
+            percentageChange="Tất cả tin đăng"
+            icon={<ShoppingCart className="w-6 h-6 text-purple-500" />}
+          />
+          <StatCard
+            title="Tổng Report"
+            value={formatCurrency((stats?.pendingReports || 0) + (stats?.resolvedReports || 0) + (stats?.rejectedReports || 0))}
+            percentageChange="Tất cả report"
+            icon={<AlertCircle className="w-6 h-6 text-orange-500" />}
+          />
+        </div>
+
+        {/* Thống kê Người Dùng */}
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">👥 Thống Kê Người Dùng</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Đang Hoạt Động"
+            value={formatCurrency(stats?.activeUsers)}
+            percentageChange="Active users"
+            icon={<Users className="w-6 h-6 text-green-500" />}
+          />
+          <StatCard
+            title="Chờ Duyệt"
+            value={formatCurrency(stats?.pendingUsers)}
+            percentageChange="Pending users"
+            icon={<Users className="w-6 h-6 text-yellow-500" />}
+          />
+          <StatCard
+            title="Bị Khóa"
+            value={formatCurrency(stats?.bannedUsers)}
+            percentageChange="Banned users"
+            icon={<Users className="w-6 h-6 text-red-500" />}
+          />
+          <StatCard
+            title="Tỷ Lệ Hoạt Động"
+            value={`${stats?.totalUsers && stats.totalUsers > 0 ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}%`}
+            percentageChange="Active rate"
+            icon={<Users className="w-6 h-6 text-blue-500" />}
+          />
+        </div>
+
+        {/* Thống kê Gói Đăng Ký */}
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">💎 Thống Kê Gói Đăng Ký</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <StatCard
+            title="Free"
+            value={formatCurrency(stats?.freeUsers)}
+            percentageChange="Gói miễn phí"
+            icon={<CreditCard className="w-6 h-6 text-gray-400" />}
+          />
+          <StatCard
+            title="Basic"
+            value={formatCurrency(stats?.basicUsers)}
+            percentageChange="Gói cơ bản"
+            icon={<CreditCard className="w-6 h-6 text-blue-400" />}
+          />
+          <StatCard
+            title="Standard"
+            value={formatCurrency(stats?.standardUsers)}
+            percentageChange="Gói tiêu chuẩn"
+            icon={<CreditCard className="w-6 h-6 text-green-400" />}
+          />
+          <StatCard
+            title="Premium"
+            value={formatCurrency(stats?.premiumUsers)}
+            percentageChange="Gói cao cấp"
+            icon={<CreditCard className="w-6 h-6 text-purple-400" />}
+          />
+          <StatCard
+            title="VIP"
+            value={formatCurrency(stats?.vipUsers)}
+            percentageChange="Gói VIP"
+            icon={<CreditCard className="w-6 h-6 text-yellow-400" />}
+          />
+        </div>
+
+        {/* Thống kê Tin Đăng */}
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">📝 Thống Kê Tin Đăng</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatCard
+            title="Đang Hoạt Động"
+            value={formatCurrency(stats?.activeListings)}
+            percentageChange="Active listings"
+            icon={<ShoppingCart className="w-6 h-6 text-green-500" />}
+          />
+          <StatCard
+            title="Chờ Duyệt"
+            value={formatCurrency(stats?.pendingListings)}
+            percentageChange="Pending listings"
+            icon={<ShoppingCart className="w-6 h-6 text-yellow-500" />}
+          />
+          <StatCard
+            title="Bị Khóa"
+            value={formatCurrency(stats?.bannedListings)}
+            percentageChange="Banned listings"
+            icon={<ShoppingCart className="w-6 h-6 text-red-500" />}
+          />
+        </div>
+
+        {/* Thống kê Report */}
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">🚨 Thống Kê Report</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatCard
+            title="Chờ Xử Lý"
+            value={formatCurrency(stats?.pendingReports)}
+            percentageChange="Pending reports"
+            icon={<AlertCircle className="w-6 h-6 text-yellow-500" />}
+          />
+          <StatCard
+            title="Đã Xử Lý"
+            value={formatCurrency(stats?.resolvedReports)}
+            percentageChange="Resolved reports"
+            icon={<AlertCircle className="w-6 h-6 text-green-500" />}
+          />
+          <StatCard
+            title="Từ Chối"
+            value={formatCurrency(stats?.rejectedReports)}
+            percentageChange="Rejected reports"
+            icon={<AlertCircle className="w-6 h-6 text-red-500" />}
           />
         </div>
 
@@ -264,32 +452,44 @@ export default function AdminChart() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* Phân tích theo loại gói */}
               <div className="bg-white p-6 rounded-lg shadow-lg">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Doanh Thu Theo Loại Gói</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Phân Bố Gói Đăng Ký</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={packageAnalysisData}
+                      data={[
+                        { name: 'Free', value: stats?.freeUsers || 0, color: '#9ca3af' },
+                        { name: 'Basic', value: stats?.basicUsers || 0, color: '#3b82f6' },
+                        { name: 'Standard', value: stats?.standardUsers || 0, color: '#10b981' },
+                        { name: 'Premium', value: stats?.premiumUsers || 0, color: '#f59e0b' },
+                        { name: 'VIP', value: stats?.vipUsers || 0, color: '#ef4444' }
+                      ]}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={(entry) => `${entry.name}: ${entry.value}%`}
+                      label={(entry) => entry.value > 0 ? `${entry.name}: ${entry.value}` : ''}
                     >
-                      {packageAnalysisData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {[
+                        { name: 'Free', value: stats?.freeUsers || 0, color: '#9ca3af' },
+                        { name: 'Basic', value: stats?.basicUsers || 0, color: '#3b82f6' },
+                        { name: 'Standard', value: stats?.standardUsers || 0, color: '#10b981' },
+                        { name: 'Premium', value: stats?.premiumUsers || 0, color: '#f59e0b' },
+                        { name: 'VIP', value: stats?.vipUsers || 0, color: '#ef4444' }
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip formatter={(value: number) => `${value} người dùng`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
               {/* Xu hướng doanh thu */}
               <div className="bg-white p-6 rounded-lg shadow-lg">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Xu Hướng Doanh Thu 30 Ngày</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Xu Hướng Doanh Thu (Dữ liệu thực)</h2>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={mockData30Days}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <XAxis dataKey="name" stroke="#6b7280" />
                     <YAxis 
@@ -310,37 +510,43 @@ export default function AdminChart() {
 
             {/* Bảng chi tiết theo gói */}
             <div className="bg-white p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Chi Tiết Doanh Thu Theo Gói</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Chi Tiết Người Dùng Theo Gói</h2>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại Gói</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số Lượng Bán</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số Người Dùng</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tỷ Lệ</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh Thu</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {packageAnalysisData.map((pkg, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: COLORS[index] }}></div>
-                            <span className="font-medium text-gray-900">{pkg.name}</span>
-                          </div>
+                    {[
+                      { name: 'Free', count: stats?.freeUsers || 0, color: '#9ca3af' },
+                      { name: 'Basic', count: stats?.basicUsers || 0, color: '#3b82f6' },
+                      { name: 'Standard', count: stats?.standardUsers || 0, color: '#10b981' },
+                      { name: 'Premium', count: stats?.premiumUsers || 0, color: '#f59e0b' },
+                      { name: 'VIP', count: stats?.vipUsers || 0, color: '#ef4444' }
+                    ].map((pkg, index) => {
+                      const totalUsers = (stats?.freeUsers || 0) + (stats?.basicUsers || 0) + (stats?.standardUsers || 0) + (stats?.premiumUsers || 0) + (stats?.vipUsers || 0);
+                      const percentage = totalUsers > 0 ? Math.round((pkg.count / totalUsers) * 100) : 0;
+                      return (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: pkg.color }}></div>
+                              <span className="font-medium text-gray-900">Gói {pkg.name}</span>
+                            </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                          {pkg.value} gói
+                          {pkg.count} người dùng
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                          {pkg.value}%
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-semibold text-green-600">
-                          {pkg.revenue.toLocaleString('vi-VN')} VNĐ
+                          {percentage}%
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                   </tbody>
                 </table>
               </div>
