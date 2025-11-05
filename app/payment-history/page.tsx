@@ -35,9 +35,15 @@ export default function PaymentHistoryPage() {
         const { token } = JSON.parse(stored);
 
         try {
+            // const res = await fetch("http://localhost:8080/api/payment/user/all", {
+            //     // const res = await fetch("https://mocki.io/v1/eb320c0e-fbb5-494d-bc7d-1f91dba589c9", {
+            //     headers: { Authorization: `Bearer ${token}` },
+            // });
             const res = await fetch("http://localhost:8080/api/payment/user/all", {
-                // const res = await fetch("https://mocki.io/v1/eb320c0e-fbb5-494d-bc7d-1f91dba589c9", {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
             });
 
             const data = await res.json();
