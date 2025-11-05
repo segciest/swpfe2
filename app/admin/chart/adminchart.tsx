@@ -99,7 +99,9 @@ export default function AdminChart() {
                 console.log('📊 Subscription Growth:', subscriptionGrowth);
 
                 // Lưu growth data để dùng cho chart
-                setRevenueGrowthData(revenueGrowth.revenue || {});
+                // setRevenueGrowthData(revenueGrowth.revenue || {});
+                setRevenueGrowthData(revenueGrowth.revenue ?? revenueGrowth ?? {});
+
                 setSubscriptionGrowthData(subscriptionGrowth.subscriptions || {});
 
                 // Xử lý monthlyRevenue nếu là array
@@ -171,14 +173,24 @@ export default function AdminChart() {
         }
 
         // Kết hợp dữ liệu revenue và subscription
+        // const combinedData = revenueArray.map((revenue: any, index: number) => {
+        //     const subscription = subscriptionArray[index] || {};
+        //     return {
+        //         name: revenue.date || revenue.month || `${index + 1}`,
+        //         "Doanh thu": revenue.value || revenue.revenue || 0,
+        //         "Gói bán": subscription.value || subscription.count || 0
+        //     };
+        // });
+
         const combinedData = revenueArray.map((revenue: any, index: number) => {
             const subscription = subscriptionArray[index] || {};
             return {
-                name: revenue.date || revenue.month || `${index + 1}`,
-                "Doanh thu": revenue.value || revenue.revenue || 0,
-                "Gói bán": subscription.value || subscription.count || 0
+                name: revenue.week || revenue.month || revenue.year || `${index + 1}`,
+                "Doanh thu": revenue.amount || 0,
+                "Gói bán": subscription.count || subscription.value || 0
             };
         });
+
 
         setChartData(combinedData);
     }, [timeFilter, revenueGrowthData, subscriptionGrowthData]);
