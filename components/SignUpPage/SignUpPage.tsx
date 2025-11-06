@@ -32,10 +32,14 @@ export default function SignUpPage() {
         setMessage('');
 
         try {
+            const [year, month, day] = form.dob.split("-");
+            const formattedDob = `${day}-${month}-${year}`;
+
+            const payload = { ...form, dob: formattedDob };
             const res = await fetch('http://localhost:8080/api/users/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify(payload),
             });
 
             const data = await res.json();
@@ -95,14 +99,36 @@ export default function SignUpPage() {
                     onChange={handleChange}
                     required
                 />
-                <input
+                {/* <input
                     type="text"
                     name="dob"
                     placeholder="Date of birth"
                     value={form.dob}
                     onChange={handleChange}
                     required
-                />
+                /> */}
+                <label style={{ width: '100%' }}>
+                    <span style={{ display: 'block', fontSize: '14px', color: '#666', marginBottom: '4px' }}>
+                        Date of Birth
+                    </span>
+                    <input
+                        type="date"
+                        name="dob"
+                        value={form.dob}
+                        onChange={handleChange}
+                        required
+                        style={{
+                            width: '100%',
+                            padding: '10px',
+                            borderRadius: '5px',
+                            border: '1px solid #ccc',
+                            outline: 'none',
+                            fontSize: '14px',
+                            color: '#333',
+                        }}
+                    />
+                </label>
+
 
                 <button type="submit" className="btn" disabled={loading}>
                     {loading ? 'Signing up...' : 'Sign Up'}

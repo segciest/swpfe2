@@ -11,6 +11,39 @@ const CATEGORIES = [
     { id: 3, name: 'Pin xe điện' },
 ];
 
+// Validate dữ liệu theo form input với đơn vị theo từng field
+function InputWithUnit({
+    placeholder,
+    value,
+    onChange,
+    unit,
+    type = "number",
+}: {
+    placeholder: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    unit: string;
+    type?: string;
+}) {
+    return (
+        <div className="relative">
+            <input
+                type={type}
+                value={value}
+                onChange={(e) => {
+                    const val = e.target.value.replace(/[^\d.]/g, ""); // chỉ số hoặc dấu .
+                    onChange({ ...e, target: { ...e.target, value: val } } as any);
+                }}
+                placeholder={placeholder}
+                className="w-full pr-12 border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            />
+            <span className="absolute right-3 top-2.5 text-gray-500 text-sm select-none">
+                {unit}
+            </span>
+        </div>
+    );
+}
+
 export default function Navbar() {
     const router = useRouter();
     const [userData, setUserData] = useState<any>(null);
@@ -340,8 +373,9 @@ export default function Navbar() {
                             </h2>
 
                             {/* Form đăng bài */}
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                {/* Danh mục */}
+                            {/* Modal cũ */}
+                            {/* <form onSubmit={handleSubmit} className="space-y-4">
+                                Danh mục
                                 <div className="flex justify-center gap-3 mb-4">
                                     {CATEGORIES.map((cat) => (
                                         <button
@@ -358,7 +392,7 @@ export default function Navbar() {
                                     ))}
                                 </div>
 
-                                {/* Các trường */}
+                                Các trường
                                 <div className="grid grid-cols-2 gap-4">
                                     <input placeholder="Tiêu đề" value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
                                     <input placeholder="Giá (VNĐ)" value={price} onChange={(e) => setPrice(e.target.value)} className="input" />
@@ -386,7 +420,7 @@ export default function Navbar() {
                                     className="input h-24"
                                 />
 
-                                {/* Ảnh */}
+                                Ảnh
                                 <div>
                                     <p className="text-sm text-gray-600 mb-2">📸 Hình ảnh sản phẩm (tối đa 5 ảnh)</p>
                                     <input type="file" multiple accept="image/*" onChange={handleFileChange} className="input" />
@@ -419,7 +453,159 @@ export default function Navbar() {
                                 >
                                     {loading ? 'Đang đăng...' : '🚀 Đăng tin'}
                                 </button>
+                            </form> */}
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* Tiêu đề & mô tả */}
+                                <input
+                                    type="text"
+                                    placeholder="Tiêu đề bài đăng"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400"
+                                />
+
+                                <textarea
+                                    placeholder="Mô tả chi tiết sản phẩm"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400"
+                                    rows={3}
+                                />
+
+                                {/* Giá và danh mục */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputWithUnit
+                                        placeholder="Giá bán"
+                                        value={price}
+                                        onChange={(e) => setPrice(e.target.value)}
+                                        unit="VNĐ"
+                                    />
+
+                                    <select
+                                        value={categoryId}
+                                        onChange={(e) => setCategoryId(Number(e.target.value))}
+                                        className="w-full border rounded-md px-3 py-2 text-sm"
+                                    >
+                                        <option value="">-- Chọn danh mục --</option>
+                                        <option value={1}>Xe điện (Ô tô)</option>
+                                        <option value={2}>Xe điện (Xe máy)</option>
+                                        <option value={3}>Pin xe điện</option>
+                                    </select>
+                                </div>
+
+                                {/* Thông tin cơ bản */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input
+                                        type="text"
+                                        placeholder="Thương hiệu"
+                                        value={brand}
+                                        onChange={(e) => setBrand(e.target.value)}
+                                        className="w-full border rounded-md px-3 py-2 text-sm"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Model"
+                                        value={model}
+                                        onChange={(e) => setModel(e.target.value)}
+                                        className="w-full border rounded-md px-3 py-2 text-sm"
+                                    />
+                                    <InputWithUnit
+                                        placeholder="Năm sản xuất"
+                                        value={year}
+                                        onChange={(e) => setYear(e.target.value)}
+                                        unit=""
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Màu sắc"
+                                        value={color}
+                                        onChange={(e) => setColor(e.target.value)}
+                                        className="w-full border rounded-md px-3 py-2 text-sm"
+                                    />
+                                </div>
+
+                                {/* Các thông số kỹ thuật có đơn vị */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputWithUnit
+                                        placeholder="Dung lượng pin"
+                                        value={batteryCapacity}
+                                        onChange={(e) => setBatteryCapacity(e.target.value)}
+                                        unit="kWh"
+                                    />
+
+                                    <InputWithUnit
+                                        placeholder="Điện áp"
+                                        value={voltage}
+                                        onChange={(e) => setVoltage(e.target.value)}
+                                        unit="V"
+                                    />
+
+                                    <InputWithUnit
+                                        placeholder="Pin còn lại"
+                                        value={batteryLifeRemaining}
+                                        onChange={(e) => setBatteryLifeRemaining(e.target.value)}
+                                        unit="%"
+                                    />
+
+                                    <InputWithUnit
+                                        placeholder="Quãng đường đã đi"
+                                        value={mileage}
+                                        onChange={(e) => setMileage(e.target.value)}
+                                        unit="Km"
+                                    />
+                                </div>
+
+                                {/* Thông tin bảo hành */}
+                                <input
+                                    type="text"
+                                    placeholder="Thông tin bảo hành (VD: 12 tháng)"
+                                    value={warrantyInfo}
+                                    onChange={(e) => setWarrantyInfo(e.target.value)}
+                                    className="w-full border rounded-md px-3 py-2 text-sm"
+                                />
+
+                                {/* Theo danh mục */}
+                                {categoryId === 1 && (
+                                    <InputWithUnit
+                                        placeholder="Số chỗ ngồi"
+                                        value={seats}
+                                        onChange={(e) => setSeats(e.target.value)}
+                                        unit="chỗ"
+                                    />
+                                )}
+                                {categoryId === 3 && (
+                                    <InputWithUnit
+                                        placeholder="Số chu kỳ sạc"
+                                        value={cycleCount}
+                                        onChange={(e) => setCycleCount(e.target.value)}
+                                        unit="lần"
+                                    />
+                                )}
+
+                                {/* Ảnh sản phẩm */}
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Hình ảnh (tối đa 5)</label>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                                        className="w-full text-sm"
+                                    />
+                                </div>
+
+                                {/* Nút hành động */}
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-md"
+                                    >
+                                        {loading ? 'Đang đăng...' : 'Đăng bài'}
+                                    </button>
+                                </div>
                             </form>
+
                         </motion.div>
                     </motion.div>
                 )}

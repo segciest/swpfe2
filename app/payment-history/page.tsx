@@ -150,19 +150,45 @@ export default function PaymentHistoryPage() {
                                         {p.amount.toLocaleString()} ₫
                                     </p>
 
-                                    <button
+
+                                    {/* Modal cũ */}
+                                    {/* <button
                                         onClick={() => cancelPayment(p.paymentId)}
                                         disabled={cancellingId === p.paymentId}
                                         className="
-              text-xs px-3 py-[6px] rounded-full font-semibold text-white
-              bg-gradient-to-br from-[#d60074] to-[#a50064]
-              hover:opacity-90
-              disabled:bg-gray-300 disabled:text-gray-600
-              shadow-sm hover:shadow-md transition
-            "
+                                            text-xs px-3 py-[6px] rounded-full font-semibold text-white
+                                            bg-gradient-to-br from-[#d60074] to-[#a50064]
+                                            hover:opacity-90
+                                            disabled:bg-gray-300 disabled:text-gray-600
+                                            shadow-sm hover:shadow-md transition
+                                            "
                                     >
                                         {cancellingId === p.paymentId ? "Đang hủy…" : "Hủy"}
+                                    </button> */}
+
+                                    {/* <button
+                                        disabled={p.status !== "PENDING"}
+                                        onClick={() => cancelPayment(p.paymentId)}
+                                        className={`px-4 py-2 rounded-lg font-semibold ${p.status !== "PENDING"
+                                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                            : "bg-red-500 hover:bg-red-600 text-white"
+                                            }`}
+                                    >
+                                        ❌ Hủy giao dịch
+                                    </button> */}
+
+                                    <button
+                                        onClick={() => cancelPayment(p.paymentId)}
+                                        disabled={cancellingId === p.paymentId || p.status !== "PENDING"}
+                                        className={`px-4 py-2 rounded-full font-semibold text-white transition
+                                        ${p.status !== "PENDING"
+                                                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                                : "bg-gradient-to-br from-[#d60074] to-[#a50064] hover:opacity-90"}
+                                        `}
+                                    >
+                                        {cancellingId === p.paymentId ? "Đang hủy…" : "❌ Hủy giao dịch"}
                                     </button>
+
                                 </div>
                             </div>
                         );

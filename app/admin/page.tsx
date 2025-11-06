@@ -240,6 +240,15 @@ export default function AdminDashboard() {
                                             <p className="text-xs text-gray-500">Ngày: {new Date(r.createdAt).toLocaleString('vi-VN')}</p>
                                         </div>
                                         <div className="flex justify-end gap-2 mt-4">
+                                            {/* 👁️ Nút Xem bài đăng */}
+                                            {r.listingId && (
+                                                <button
+                                                    onClick={() => window.open(`/listing/${r.listingId}`, '_blank')}
+                                                    className="flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md"
+                                                >
+                                                    <Eye size={16} /> Xem bài đăng
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => handleReportAction(r.reportId, 'RESOLVED')}
                                                 className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
@@ -299,7 +308,8 @@ export default function AdminDashboard() {
             </main>
 
             {/* --- Modal chi tiết bài đăng --- */}
-            {selected && activeTab === 'listings' && (
+            {/* Modal cũ */}
+            {/* {selected && activeTab === 'listings' && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white w-[600px] rounded-xl p-6 relative shadow-lg max-h-[80vh] overflow-auto">
                         <button onClick={() => setSelected(null)} className="absolute top-3 right-4 text-gray-600 hover:text-black">✕</button>
@@ -312,7 +322,30 @@ export default function AdminDashboard() {
                         </p>
                     </div>
                 </div>
+            )} */}
+            {selected && activeTab === 'listings' && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white w-[600px] rounded-xl p-6 relative shadow-lg max-h-[80vh] overflow-auto">
+                        <button onClick={() => setSelected(null)} className="absolute top-3 right-4 text-gray-600 hover:text-black">✕</button>
+                        <h2 className="text-xl font-bold mb-4">{selected.title}</h2>
+                        <img src={selected.imageUrls?.[0] || '/no-image.png'} alt="Ảnh" className="w-full h-60 object-cover rounded-lg mb-4" />
+                        <p className="text-gray-700 whitespace-pre-line mb-2">{selected.description}</p>
+                        <p className="text-yellow-700 font-semibold mb-2">Giá: {selected.price?.toLocaleString()} VNĐ</p>
+                        <p className="text-sm text-gray-500 mb-4">
+                            Thương hiệu: {selected.brand || 'Không có'} — Màu: {selected.color || 'N/A'}
+                        </p>
+
+                        {/* ✅ Nút xem bài đăng */}
+                        <button
+                            onClick={() => window.open(`/listing/${selected.listingId}`, '_blank')}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded-md transition"
+                        >
+                            👁️ Xem bài đăng
+                        </button>
+                    </div>
+                </div>
             )}
+
 
             {/* --- Modal chỉnh sửa gói đăng ký --- */}
             {selected && activeTab === 'subscriptions' && (
