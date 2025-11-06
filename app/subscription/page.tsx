@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 // Dữ liệu gói (đã thêm 'id' và 'priceValue')
 const pricingPlans = [
   {
-    id: 1, // <-- ID gói (dùng làm subId)
+    id: 2, // <-- ID gói (dùng làm subId)
     name: 'Basic',
     price: '50.000đ',
     priceValue: 50000, // <-- Giá trị số (để gửi đi)
@@ -27,7 +27,7 @@ const pricingPlans = [
     buttonClasses: 'bg-pink-600 hover:bg-pink-700 text-white',
   },
   {
-    id: 2, // <-- ID gói
+    id: 3, // <-- ID gói
     name: 'Premium',
     price: '150.000đ',
     priceValue: 150000, // <-- Giá trị số
@@ -47,7 +47,7 @@ const pricingPlans = [
     buttonClasses: 'bg-yellow-500 hover:bg-yellow-600 text-gray-900',
   },
   {
-    id: 3, // <-- ID gói
+    id: 4, // <-- ID gói
     name: 'VIP',
     price: '200.000đ',
     priceValue: 200000, // <-- Giá trị số
@@ -91,16 +91,45 @@ export default function PricingPage() {
 
   // (3) Hàm xử lý khi nhấn nút "Mua Ngay"
   const handleCheckoutClick = (plan: Plan) => {
-    
     // (4) Nó kiểm tra state isLoggedIn
     if (isLoggedIn) {
-      // NẾU LÀ 'true': Đã đăng nhập -> Chuyển đến trang checkout mới
+      // đọc userData từ localStorage để kiểm tra gói hiện tại
+      const stored = localStorage.getItem("userData");
+      const user: any = stored ? JSON.parse(stored) : null;
+
+      // helper: lấy tên gói hiện tại nếu có
+      const getCurrentPlanName = (u: any) => {
+        if (!u) return null;
+        return (
+          u.subName ||
+          u.subscriptionName ||
+          u.subscription?.subName ||
+          u.sub?.subName ||
+          u.subid?.subName ||
+          u.subscriptionId?.subName ||
+          null
+        );
+      };
+
+      const currentPlanName = getCurrentPlanName(user);
+
+      // Nếu biết user đang ở gói Free (tên chứa 'free') --> không báo, cho proceed
+      const isFree = currentPlanName ? /free/i.test(currentPlanName) : false;
+
+      // Nếu user có gói (khác null) và không phải Free => hiển thị confirm
+      if (currentPlanName && !isFree) {
+        const proceed = window.confirm(
+          `Bạn đang có gói "${currentPlanName}". Nếu mua gói mới thì gói cũ sẽ biến mất. Bạn có muốn tiếp tục?`
+        );
+        if (!proceed) return;
+      }
+
+      // Nếu không có currentPlanName (không biết) hoặc user xác nhận, tiếp tục checkout
       const checkoutUrl = `/payment/checkout?subId=${plan.id}&price=${plan.priceValue}&name=${encodeURIComponent(plan.name)}`;
       router.push(checkoutUrl);
     } else {
-      // NẾU LÀ 'false': Chưa đăng nhập -> Chuyển về trang login
-      // *** ĐÂY LÀ LÝ DO BẠN BỊ CHUYỂN HƯỚNG ***
-      router.push('/login-register'); 
+      // Chưa đăng nhập -> Chuyển về trang login
+      router.push('/login-register');
     }
   };
 

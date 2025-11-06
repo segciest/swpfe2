@@ -187,7 +187,7 @@ export default function AdminChart() {
             return {
                 name: revenue.week || revenue.month || revenue.year || `${index + 1}`,
                 "Doanh thu": revenue.amount || 0,
-                "Gói bán": subscription.count || subscription.value || 0
+                // "Gói bán": subscription.count || subscription.value || 0
             };
         });
 
