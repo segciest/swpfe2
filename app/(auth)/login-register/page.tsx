@@ -2,10 +2,12 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 // --- COMPONENT ĐĂNG NHẬP ---
 const SignInForm = () => {
     const router = useRouter();
+    const { login } = useAuth(); // Sử dụng AuthContext
     const [form, setForm] = useState({ email: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
@@ -30,22 +32,24 @@ const SignInForm = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Login failed');
 
-            // Lưu thông tin user vào localStorage để Navbar cập nhật
-            // API trả về: token, userId, userName, role
-            const stored = { 
-                token: data.token, 
-                userId: data.userId, 
+            // ✅ Sử dụng login từ AuthContext để cập nhật toàn bộ app
+            login({
+                token: data.token,
+                userId: data.userId,
                 userName: data.userName || data.email,
-                role: data.role // ✅ Thêm role vào localStorage
-            }; 
-            localStorage.setItem('userData', JSON.stringify(stored));
+                email: data.email,
+                role: data.role,
+                role_id: data.role_id,
+                roleId: data.roleId,
+                avatarUrl: data.avatarUrl
+            });
 
             setMessage('Đăng nhập thành công!');
-            router.push('/'); // Chuyển về trang chủ
             
-            // Trigger Navbar tự cập nhật
-            window.dispatchEvent(new Event("storage"));
-            router.refresh(); 
+            // Chuyển hướng về trang chủ
+            setTimeout(() => {
+                router.push('/');
+            }, 500);
         } catch (err: any) {
             setMessage(err.message);
         } finally {

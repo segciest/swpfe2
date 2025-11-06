@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, UserCircle, LogOut, LogIn, PlusCircle, X, Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CATEGORIES = [
     { id: 1, name: 'Xe điện (Ô tô)' },
@@ -13,7 +14,7 @@ const CATEGORIES = [
 
 export default function Navbar() {
     const router = useRouter();
-    const [userData, setUserData] = useState<any>(null);
+    const { userData, logout } = useAuth(); // Sử dụng AuthContext
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showNotify, setShowNotify] = useState(false);
@@ -46,23 +47,6 @@ export default function Navbar() {
     const [files, setFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
 
-    // Kiểm tra đăng nhập
-    useEffect(() => {
-        const stored = localStorage.getItem('userData');
-        if (stored) {
-            const parsedData = JSON.parse(stored);
-            console.log('📌 userData từ localStorage:', parsedData);
-            // ✅ Đảm bảo role được chuyển đổi đúng nếu API trả về role_id
-            if (parsedData.role_id === 1 || parsedData.roleId === 1) {
-                parsedData.role = 'ADMIN';
-            } else if (parsedData.role_id === 2 || parsedData.roleId === 2) {
-                parsedData.role = 'MANAGER';
-            }
-            console.log('✅ userData sau khi xử lý:', parsedData);
-            setUserData(parsedData);
-        }
-    }, []);
-
     // 🔔 Gọi API lấy danh sách thông báo khi mở menu thông báo
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -81,9 +65,7 @@ export default function Navbar() {
     }, [showNotify, userData]);
 
     const handleLogout = () => {
-        localStorage.removeItem('userData');
-        setUserData(null);
-        router.push('/');
+        logout(); // Sử dụng hàm logout từ AuthContext
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,26 +196,26 @@ export default function Navbar() {
                     {/* MENU THÔNG BÁO */}
                     {showNotify && (
                         <div className="absolute right-20 top-12 w-80 bg-white border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-                            <div className="px-4 py-2 border-b font-semibold text-gray-800 flex justify-between items-center">
+                            <div className="px-4 py-2 border-b font-semibold text-gray-900 flex justify-between items-center bg-yellow-50">
                                 🔔 Thông báo
                                 <button
                                     onClick={() => setShowNotify(false)}
-                                    className="text-gray-500 hover:text-gray-700 text-sm"
+                                    className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
                                 >
                                     Đóng
                                 </button>
                             </div>
 
                             {notifications.length === 0 ? (
-                                <div className="p-4 text-sm text-gray-600 text-center">
+                                <div className="p-4 text-sm text-gray-700 text-center font-medium">
                                     Hiện chưa có thông báo mới.
                                 </div>
                             ) : (
                                 <ul className="divide-y divide-gray-200">
                                     {notifications.map((noti) => (
-                                        <li key={noti.notificationId} className="p-3 hover:bg-gray-50">
-                                            <p className="text-sm text-gray-800">{noti.message}</p>
-                                            <p className="text-xs text-gray-500 mt-1">
+                                        <li key={noti.notificationId} className="p-3 hover:bg-yellow-50 transition-colors cursor-pointer">
+                                            <p className="text-sm text-gray-900 font-medium">{noti.message}</p>
+                                            <p className="text-xs text-gray-600 mt-1">
                                                 {new Date(noti.createdTime).toLocaleString('vi-VN')}
                                             </p>
                                         </li>
@@ -299,7 +281,7 @@ export default function Navbar() {
                                                     : '/profile'
                                             )
                                         }
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-yellow-50 hover:text-gray-900 font-medium transition-colors"
                                     >
                                         {userData.role === 'ADMIN' || userData.role === 'MANAGER'
                                             ? 'Admin Dashboard'
@@ -310,7 +292,7 @@ export default function Navbar() {
                                     {userData.role === 'ADMIN' && (
                                         <button
                                             onClick={() => router.push('/admin/chart')}
-                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-yellow-50 hover:text-gray-900 font-medium transition-colors"
                                         >
                                             Báo Cáo Doanh Thu
                                         </button>
@@ -322,14 +304,14 @@ export default function Navbar() {
                                                 '/payment-history'
                                             )
                                         }
-                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-800 hover:bg-yellow-50 hover:text-gray-900 font-medium transition-colors"
                                     >
                                         Lịch sử giao dịch
                                     </button>
 
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 font-medium transition-colors"
                                     >
                                         <LogOut className="w-4 h-4" /> Đăng xuất
                                     </button>
@@ -363,7 +345,7 @@ export default function Navbar() {
                                 <X size={22} />
                             </button>
 
-                            <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+                            <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">
                                 📝 Đăng tin mới
                             </h2>
 
@@ -376,9 +358,9 @@ export default function Navbar() {
                                             key={cat.id}
                                             type="button"
                                             onClick={() => setCategoryId(cat.id)}
-                                            className={`px-4 py-2 rounded-full font-medium border transition ${categoryId === cat.id
-                                                ? 'bg-yellow-400 border-yellow-500 text-gray-900 shadow'
-                                                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                                            className={`px-4 py-2 rounded-full font-semibold border transition ${categoryId === cat.id
+                                                ? 'bg-yellow-400 border-yellow-500 text-gray-900 shadow-md'
+                                                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
                                                 }`}
                                         >
                                             {cat.name}
@@ -388,35 +370,35 @@ export default function Navbar() {
 
                                 {/* Các trường */}
                                 <div className="grid grid-cols-2 gap-4">
-                                    <input placeholder="Tiêu đề" value={title} onChange={(e) => setTitle(e.target.value)} className="input" />
-                                    <input placeholder="Giá (VNĐ)" value={price} onChange={(e) => setPrice(e.target.value)} className="input" />
-                                    <input placeholder="Thương hiệu" value={brand} onChange={(e) => setBrand(e.target.value)} className="input" />
-                                    <input placeholder="Model" value={model} onChange={(e) => setModel(e.target.value)} className="input" />
-                                    <input placeholder="Năm SX" value={year} onChange={(e) => setYear(e.target.value)} className="input" />
-                                    <input placeholder="Màu sắc" value={color} onChange={(e) => setColor(e.target.value)} className="input" />
-                                    <input placeholder="Loại xe / pin" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className="input" />
+                                    <input placeholder="Tiêu đề" value={title} onChange={(e) => setTitle(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Giá (VNĐ)" value={price} onChange={(e) => setPrice(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Thương hiệu" value={brand} onChange={(e) => setBrand(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Model" value={model} onChange={(e) => setModel(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Năm SX" value={year} onChange={(e) => setYear(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Màu sắc" value={color} onChange={(e) => setColor(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Loại xe / pin" value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
                                     {categoryId === 1 && (
-                                        <input placeholder="Số chỗ ngồi" value={seats} onChange={(e) => setSeats(e.target.value)} className="input" />
+                                        <input placeholder="Số chỗ ngồi" value={seats} onChange={(e) => setSeats(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
                                     )}
                                     {categoryId === 3 && (
-                                        <input placeholder="Số chu kỳ sạc" value={cycleCount} onChange={(e) => setCycleCount(e.target.value)} className="input" />
+                                        <input placeholder="Số chu kỳ sạc" value={cycleCount} onChange={(e) => setCycleCount(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
                                     )}
-                                    <input placeholder="Dung lượng pin (kWh/Ah)" value={batteryCapacity} onChange={(e) => setBatteryCapacity(e.target.value)} className="input" />
-                                    <input placeholder="Điện áp (V)" value={voltage} onChange={(e) => setVoltage(e.target.value)} className="input" />
-                                    <input placeholder="Pin còn lại (VD: 90%)" value={batteryLifeRemaining} onChange={(e) => setBatteryLifeRemaining(e.target.value)} className="input" />
-                                    <input placeholder="Bảo hành" value={warrantyInfo} onChange={(e) => setWarrantyInfo(e.target.value)} className="input" />
+                                    <input placeholder="Dung lượng pin (kWh/Ah)" value={batteryCapacity} onChange={(e) => setBatteryCapacity(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Điện áp (V)" value={voltage} onChange={(e) => setVoltage(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Pin còn lại (VD: 90%)" value={batteryLifeRemaining} onChange={(e) => setBatteryLifeRemaining(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
+                                    <input placeholder="Bảo hành" value={warrantyInfo} onChange={(e) => setWarrantyInfo(e.target.value)} className="input text-gray-900 placeholder:text-gray-500" />
                                 </div>
 
                                 <textarea
                                     placeholder="Mô tả chi tiết..."
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="input h-24"
+                                    className="input h-24 text-gray-900 placeholder:text-gray-500"
                                 />
 
                                 {/* Ảnh */}
                                 <div>
-                                    <p className="text-sm text-gray-600 mb-2">📸 Hình ảnh sản phẩm (tối đa 5 ảnh)</p>
+                                    <p className="text-sm text-gray-800 font-semibold mb-2">📸 Hình ảnh sản phẩm (tối đa 5 ảnh)</p>
                                     <input type="file" multiple accept="image/*" onChange={handleFileChange} className="input" />
                                     {previews.length > 0 && (
                                         <div className="grid grid-cols-5 gap-2 mt-3">
@@ -443,9 +425,9 @@ export default function Navbar() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-2 rounded-lg mt-3 transition"
+                                    className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-3 rounded-lg mt-3 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {loading ? 'Đang đăng...' : '🚀 Đăng tin'}
+                                    {loading ? '⏳ Đang đăng...' : '🚀 Đăng tin'}
                                 </button>
                             </form>
                         </motion.div>

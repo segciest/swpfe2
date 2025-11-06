@@ -1,6 +1,6 @@
 'use client';
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, Flag, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,29 +20,79 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingFavorite, setCheckingFavorite] = useState(true);
+
+  // Kiểm tra xem bài đăng có trong danh sách yêu thích không
+  useEffect(() => {
+    const checkIfLiked = async () => {
+      const userData = localStorage.getItem("userData");
+      if (!userData) {
+        setCheckingFavorite(false);
+        return;
+      }
+
+      const { token } = JSON.parse(userData);
+      try {
+        const res = await fetch(`http://localhost:8080/api/favorite/user`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const favorites = await res.json();
+          const isLiked = favorites.some((fav: any) => 
+            fav.listingId === listing.listingId || fav.id === listing.listingId
+          );
+          setLiked(isLiked);
+        }
+      } catch (err) {
+        console.error("Error checking favorite status:", err);
+      } finally {
+        setCheckingFavorite(false);
+      }
+    };
+
+    checkIfLiked();
+  }, [listing.listingId]);
 
   // ❤️ Toggle yêu thích
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const userData = localStorage.getItem("userData");
-    if (!userData) return alert("Vui lòng đăng nhập để yêu thích bài đăng!");
+    if (!userData) {
+      alert("Vui lòng đăng nhập để yêu thích bài đăng!");
+      return;
+    }
 
     const { token } = JSON.parse(userData);
+    
+    // Optimistic update - cập nhật UI ngay lập tức
+    const previousLiked = liked;
+    setLiked(!liked);
+    
     try {
       const res = await fetch(
         `http://localhost:8080/api/favorite/toggle?listingId=${listing.listingId}`,
-        { method: "POST", headers: { Authorization: `Bearer ${token}` } }
+        { 
+          method: "POST", 
+          headers: { Authorization: `Bearer ${token}` } 
+        }
       );
 
       if (res.status === 401) {
         alert("Token không hợp lệ hoặc đã hết hạn!");
+        setLiked(previousLiked); // Revert
         return;
       }
 
-      setLiked((prev) => !prev);
+      if (!res.ok) {
+        throw new Error("Không thể cập nhật yêu thích");
+      }
+
+      console.log(`✅ ${!previousLiked ? 'Đã thêm vào' : 'Đã xóa khỏi'} yêu thích`);
     } catch (err) {
       console.error("Lỗi khi toggle yêu thích:", err);
-      alert("Không thể thêm vào danh sách yêu thích!");
+      alert("Không thể cập nhật danh sách yêu thích!");
+      setLiked(previousLiked); // Revert on error
     }
   };
 
@@ -121,10 +171,19 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           <div className="absolute top-2 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
             <button
               onClick={handleToggleFavorite}
-              className={`p-1.5 rounded-full bg-white shadow hover:scale-110 transition ${liked ? "text-red-500" : "text-gray-700"
-                }`}
+              disabled={checkingFavorite}
+              className={`p-1.5 rounded-full shadow hover:scale-110 transition ${
+                liked 
+                  ? "bg-red-50 text-red-500" 
+                  : "bg-white text-gray-700"
+              }`}
+              title={liked ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích"}
             >
-              <Heart size={18} fill={liked ? "currentColor" : "none"} />
+              <Heart 
+                size={18} 
+                fill={liked ? "currentColor" : "none"}
+                className={liked ? "text-red-500" : ""}
+              />
             </button>
 
             <button

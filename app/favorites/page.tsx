@@ -10,8 +10,10 @@ interface FavoriteListing {
   title: string;
   description: string;
   price: number;
-  imageUrl?: string;
-  image_url?: string;  // Backup nếu API dùng snake_case
+  thumbnailUrl?: string; // Trường từ backend favorites API
+  imageUrls?: string[];  // Mảng ảnh (đúng theo database)
+  imageUrl?: string;     // Backup cho trường hợp API trả về imageUrl
+  image_url?: string;    // Backup nếu API dùng snake_case
   category?: string;
   categoryName?: string; // Backup nếu API dùng categoryName
   createdAt?: string;
@@ -24,6 +26,7 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState<any>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null); // Track which item is being removed
 
   useEffect(() => {
     // Kiểm tra đăng nhập
@@ -54,6 +57,9 @@ export default function FavoritesPage() {
 
         const data = await res.json();
         console.log('📌 Favorites data from API:', data);
+        console.log('📌 First item:', data[0]);
+        console.log('📌 First item imageUrls:', data[0]?.imageUrls);
+        console.log('📌 First item imageUrl:', data[0]?.imageUrl);
         setFavorites(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi');
@@ -71,24 +77,35 @@ export default function FavoritesPage() {
     const listingId = listing.listingId || listing.id;
     if (!listingId) return;
 
+    // Set loading state cho item đang xóa
+    setRemovingId(listingId);
+
     try {
-      const res = await fetch(`http://localhost:8080/api/favorite/remove`, {
-        method: 'DELETE',
+      // Sử dụng toggle API thay vì remove
+      const res = await fetch(`http://localhost:8080/api/favorite/toggle?listingId=${listingId}`, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${userData.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ listingId })
+          'Authorization': `Bearer ${userData.token}`
+        }
       });
 
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ Error response:', errorText);
         throw new Error('Không thể xóa khỏi yêu thích');
       }
 
-      // Cập nhật danh sách
-      setFavorites(favorites.filter(item => (item.listingId || item.id) !== listingId));
+      // Cập nhật danh sách - xóa item này khỏi favorites với animation
+      setTimeout(() => {
+        setFavorites(favorites.filter(item => (item.listingId || item.id) !== listingId));
+        setRemovingId(null);
+      }, 300);
+      
+      console.log('✅ Đã xóa khỏi yêu thích:', listingId);
     } catch (err) {
-      console.error('Lỗi khi xóa yêu thích:', err);
+      console.error('❌ Lỗi khi xóa yêu thích:', err);
+      alert('Không thể xóa khỏi danh sách yêu thích. Vui lòng thử lại!');
+      setRemovingId(null);
     }
   };
 
@@ -160,16 +177,20 @@ export default function FavoritesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {favorites.map((listing, index) => {
               const uniqueKey = listing.listingId || listing.id || `listing-${index}`;
+              const isRemoving = removingId === uniqueKey;
+              
               return (
                 <div
                   key={uniqueKey}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+                  className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 ${
+                    isRemoving ? 'opacity-50 scale-95' : ''
+                  }`}
                 >
                 {/* Hình ảnh */}
                 <div className="relative h-48 bg-gray-200">
-                  {(listing.imageUrl || listing.image_url) ? (
+                  {(listing.thumbnailUrl || (listing.imageUrls && listing.imageUrls.length > 0) || listing.imageUrl || listing.image_url) ? (
                     <img
-                      src={listing.imageUrl || listing.image_url}
+                      src={listing.thumbnailUrl || listing.imageUrls?.[0] || listing.imageUrl || listing.image_url}
                       alt={listing.title}
                       className="w-full h-full object-cover"
                     />
@@ -178,15 +199,23 @@ export default function FavoritesPage() {
                       Không có ảnh
                     </div>
                   )}
-                  {/* Nút xóa yêu thích */}
+                  {/* Nút xóa yêu thích - Tim đỏ */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRemoveFavorite(listing);
+                      if (window.confirm('Bạn có chắc muốn xóa khỏi danh sách yêu thích?')) {
+                        handleRemoveFavorite(listing);
+                      }
                     }}
-                    className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+                    disabled={isRemoving}
+                    className={`absolute top-3 right-3 bg-white p-2 rounded-full shadow-md transition-all duration-200 ${
+                      isRemoving 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-red-50 hover:scale-110'
+                    }`}
+                    title={isRemoving ? "Đang xóa..." : "Xóa khỏi yêu thích"}
                   >
-                    <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+                    <Heart className={`w-6 h-6 ${isRemoving ? 'animate-pulse' : ''} text-red-500 fill-red-500`} />
                   </button>
                 </div>
 
