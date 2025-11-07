@@ -333,6 +333,18 @@ export default function Navbar() {
                                     </button>
 
                                     <button
+                                        onClick={() =>
+                                            router.push(
+                                                '/admin/chart'
+                                            )
+                                        }
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                    >
+                                        Admin chart
+                                    </button>
+                                    
+
+                                    <button
                                         onClick={handleLogout}
                                         className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
                                     >

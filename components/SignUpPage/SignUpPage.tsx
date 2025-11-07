@@ -32,14 +32,14 @@ export default function SignUpPage() {
         setMessage('');
 
         try {
-            const [year, month, day] = form.dob.split("-");
-            const formattedDob = `${day}-${month}-${year}`;
+            // const [year, month, day] = form.dob.split("-");
+            // const formattedDob = `${day}-${month}-${year}`;
 
-            const payload = { ...form, dob: formattedDob };
+            // const payload = { ...form, dob: formattedDob };
             const res = await fetch('http://localhost:8080/api/users/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(form),
             });
 
             const data = await res.json();
