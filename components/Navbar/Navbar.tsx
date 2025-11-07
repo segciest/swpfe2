@@ -335,6 +335,17 @@ export default function Navbar() {
                                     <button
                                         onClick={() =>
                                             router.push(
+                                                `/favorites`
+                                            )
+                                        }
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                    >
+                                        Bài đăng yêu thích
+                                    </button>
+                                    
+                                    <button
+                                        onClick={() =>
+                                            router.push(
                                                 '/admin/chart'
                                             )
                                         }
