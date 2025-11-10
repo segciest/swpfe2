@@ -16,7 +16,7 @@ export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
 
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/verify-reset-otp?otp=' + otp, {
+            const res = await fetch('http://localhost:8080/api/users/verify-reset-otp?otp=' + otp, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
             });

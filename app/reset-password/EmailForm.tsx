@@ -13,10 +13,10 @@ export default function EmailForm({ setStep, setMessage }: EmailFormProps) {
     const handleSendOtp = async () => {
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ email }),
+            const res = await fetch("http://localhost:8080/api/users/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
             });
 
             const data = await res.json();

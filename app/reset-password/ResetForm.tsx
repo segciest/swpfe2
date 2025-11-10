@@ -16,7 +16,7 @@ export default function ResetForm({ setStep, setMessage }: ResetFormProps) {
 
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/reset-password?newPass=' + newPass, {
+            const res = await fetch('http://localhost:8080/api/users/reset-password?newPass=' + newPass, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
             });
