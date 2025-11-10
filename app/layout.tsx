@@ -1,6 +1,7 @@
 "use client";
 
 import "./globals.css";
+import "@/lib/fontawesome";
 import Navbar from "@/components/Navbar/Navbar";
 import { usePathname } from "next/navigation";
 

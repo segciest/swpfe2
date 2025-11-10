@@ -1,6 +1,14 @@
 'use client';
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faFacebook,
+    faTwitter,
+    faGooglePlusG,
+    faLinkedin,
+    faGithub,
+} from "@fortawesome/free-brands-svg-icons";
 
 interface RegisterForm {
     userName: string;
@@ -59,11 +67,11 @@ export default function SignUpPage() {
             <form onSubmit={handleSubmit}>
                 <h1>Create Account</h1>
                 <div className="formIcon">
-                    <a><i className="fa-brands fa-square-facebook" /></a>
-                    <a><i className="fa-brands fa-twitter" /></a>
-                    <a><i className="fa-brands fa-google-plus-g" /></a>
-                    <a><i className="fa-brands fa-linkedin" /></a>
-                    <a><i className="fa-brands fa-github" /></a>
+                    <a><FontAwesomeIcon icon={faFacebook} /></a>
+                    <a><FontAwesomeIcon icon={faTwitter} /></a>
+                    <a><FontAwesomeIcon icon={faGooglePlusG} /></a>
+                    <a><FontAwesomeIcon icon={faLinkedin} /></a>
+                    <a><FontAwesomeIcon icon={faGithub} /></a>
                 </div>
                 <span>or use your email for registration</span>
 

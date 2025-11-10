@@ -2,6 +2,14 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveToken } from '@/utils/auth';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+    faFacebook,
+    faTwitter,
+    faGooglePlusG,
+    faLinkedin,
+    faGithub,
+} from "@fortawesome/free-brands-svg-icons";
 
 interface LoginForm {
     email: string;
@@ -55,11 +63,11 @@ export default function SignInPage() {
             <form onSubmit={handleSubmit}>
                 <h1>Sign In</h1>
                 <div className="formIcon">
-                    <a><i className="fa-brands fa-square-facebook" /></a>
-                    <a><i className="fa-brands fa-twitter" /></a>
-                    <a><i className="fa-brands fa-google-plus-g" /></a>
-                    <a><i className="fa-brands fa-linkedin" /></a>
-                    <a><i className="fa-brands fa-github" /></a>
+                    <a><FontAwesomeIcon icon={faFacebook} /></a>
+                    <a><FontAwesomeIcon icon={faTwitter} /></a>
+                    <a><FontAwesomeIcon icon={faGooglePlusG} /></a>
+                    <a><FontAwesomeIcon icon={faLinkedin} /></a>
+                    <a><FontAwesomeIcon icon={faGithub} /></a>
                 </div>
                 <span>or use your email password</span>
 
@@ -89,6 +97,13 @@ export default function SignInPage() {
                     />
                     <span>Remember me</span>
                 </label>
+                <button
+                    type="button"
+                    onClick={() => router.push('/reset-password')}
+                    className="text-blue-500 hover:underline transition cursor-pointer"
+                >
+                    Forgot password?
+                </button>
 
                 <button type="submit" className="btn" disabled={loading}>
                     {loading ? 'Signing in...' : 'Sign In'}
