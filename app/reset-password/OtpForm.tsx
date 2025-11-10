@@ -16,10 +16,17 @@ export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
 
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/users/verify-reset-otp?otp=' + otp, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await fetch(
+                "http://localhost:8080/api/users/verify-reset-otp",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: new URLSearchParams({ otp }),
+                }
+            );
 
             const data = await res.json();
             if (res.ok) {

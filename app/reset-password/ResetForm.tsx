@@ -16,10 +16,15 @@ export default function ResetForm({ setStep, setMessage }: ResetFormProps) {
 
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/users/reset-password?newPass=' + newPass, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
+            const res = await fetch("http://localhost:8080/api/users/reset-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: new URLSearchParams({ newPass }),
             });
+
             const data = await res.json();
             if (res.ok) {
                 setMessage(data.message);
