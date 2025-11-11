@@ -44,7 +44,7 @@ function InputWithUnit({
     );
 }
 
-export default function Navbar() {
+export default function Navbar({ onSearch }: { onSearch?: (results: any[]) => void }) {
     const router = useRouter();
     const [userData, setUserData] = useState<any>(null);
     const [showUserMenu, setShowUserMenu] = useState(false);
@@ -52,6 +52,8 @@ export default function Navbar() {
     const [showNotify, setShowNotify] = useState(false);
     const [loading, setLoading] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
+    const [searchText, setSearchText] = useState('');
+
 
     // Common fields
     const [categoryId, setCategoryId] = useState<number>(1);
@@ -213,16 +215,28 @@ export default function Navbar() {
                     ⚡ EV Shop
                 </div>
 
+                {/* Search Bar */}
                 <div className="flex items-center bg-white rounded-full px-3 py-1 w-[320px] md:w-[400px]">
                     <input
                         type="text"
                         placeholder="Tìm kiếm sản phẩm..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
                         className="flex-1 outline-none bg-transparent text-sm text-gray-700"
                     />
-                    <button className="bg-yellow-400 text-gray-800 font-medium px-3 py-1 rounded-full text-sm">
+                    <button
+                        onClick={async () => {
+                            if (!searchText.trim()) return;
+                            const res = await fetch(`http://localhost:8080/api/listing/search?keyword=${encodeURIComponent(searchText)}`);
+                            const data = await res.json();
+                            onSearch?.(data); // gửi kết quả về page
+                        }}
+                        className="bg-yellow-400 text-gray-800 font-medium px-3 py-1 rounded-full text-sm"
+                    >
                         Tìm
                     </button>
                 </div>
+
 
                 <div className="flex items-center gap-4 relative">
                     {/* Thông báo */}
@@ -342,7 +356,7 @@ export default function Navbar() {
                                     >
                                         Bài đăng yêu thích
                                     </button>
-                                    
+
                                     <button
                                         onClick={() =>
                                             router.push(
@@ -353,7 +367,7 @@ export default function Navbar() {
                                     >
                                         Admin chart
                                     </button>
-                                    
+
 
                                     <button
                                         onClick={handleLogout}
