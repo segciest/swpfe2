@@ -55,6 +55,9 @@ export default function ProfilePage() {
     const [showListings, setShowListings] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const [otp, setOtp] = useState("");
+    const [verifying, setVerifying] = useState(false);
+
 
     useEffect(() => {
         const stored = localStorage.getItem("userData");
@@ -96,6 +99,35 @@ export default function ProfilePage() {
             setLoading(false);
         }
     };
+
+    // ✅ Gọi API xác thực email - otp
+    const handleVerifyEmail = async () => {
+        if (!otp.trim()) return alert("Vui lòng nhập mã OTP!");
+        const stored = localStorage.getItem("userData");
+        if (!stored) return alert("Bạn cần đăng nhập!");
+        const { token } = JSON.parse(stored);
+
+        try {
+            setVerifying(true);
+            const res = await fetch(`http://localhost:8080/api/users/verify-email?otp=${otp}`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const text = await res.text();
+
+            if (!res.ok) throw new Error(text);
+            alert("✅ " + text);
+            // Sau khi xác minh, tải lại thông tin user
+            window.location.reload();
+        } catch (err: any) {
+            alert("❌ Lỗi xác thực: " + err.message);
+        } finally {
+            setVerifying(false);
+        }
+    };
+
+
+
 
     if (!profile)
         return <div className="p-6 text-gray-500">Đang tải thông tin người dùng...</div>;
@@ -182,11 +214,39 @@ export default function ProfilePage() {
                     </button>
                 </div>
 
-                {/* Xác thực */}
-                <div className="mt-6 text-sm text-gray-600 flex items-center gap-2">
-                    <BadgeCheck className="w-4 h-4 text-green-500" />
-                    {profile.verifiedCode ? "Đã xác thực" : "Chưa xác thực"}
+                {/* Xác thực email */}
+                <div className="mt-6 text-sm text-gray-600 flex flex-col items-center gap-3 w-full">
+                    {profile.verifiedCode ? (
+                        <div className="flex items-center gap-2 text-green-600">
+                            <BadgeCheck className="w-4 h-4" />
+                            <span>Đã xác thực email</span>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-2 text-red-500">
+                                <BadgeCheck className="w-4 h-4" />
+                                <span>Chưa xác thực email</span>
+                            </div>
+
+                            <input
+                                type="text"
+                                placeholder="Nhập mã OTP"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                                className="border px-3 py-2 rounded-lg w-full text-sm focus:ring-2 focus:ring-orange-400"
+                            />
+
+                            <button
+                                onClick={handleVerifyEmail}
+                                disabled={verifying}
+                                className="bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 w-full font-medium"
+                            >
+                                {verifying ? "🔄 Đang xác thực..." : "📧 Xác thực email"}
+                            </button>
+                        </>
+                    )}
                 </div>
+
             </div>
 
             {/* --- CỘT PHẢI: Danh sách bài đăng --- */}
