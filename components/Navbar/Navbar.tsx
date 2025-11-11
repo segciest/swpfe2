@@ -228,8 +228,10 @@ export default function Navbar({ onSearch }: { onSearch?: (results: any[]) => vo
                         onClick={async () => {
                             if (!searchText.trim()) return;
                             const res = await fetch(`http://localhost:8080/api/listing/search?keyword=${encodeURIComponent(searchText)}`);
+                            // const res = await fetch(`https://mocki.io/v1/dec38df7-8cec-4977-8961-2b7a1553bbac`);
                             const data = await res.json();
-                            onSearch?.(data); // gửi kết quả về page
+                            window.dispatchEvent(new CustomEvent("search-results", { detail: data }));
+                            // onSearch?.(data); // gửi kết quả về page
                         }}
                         className="bg-yellow-400 text-gray-800 font-medium px-3 py-1 rounded-full text-sm"
                     >

@@ -13,6 +13,13 @@ export default function HomePage() {
   useEffect(() => {
     getListings().then(setListings).catch(console.error);
   }, []);
+  useEffect(() => {
+    const handleSearch = (e: any) => {
+      setSearchResults(e.detail); // nhận danh sách từ Navbar
+    };
+    window.addEventListener("search-results", handleSearch);
+    return () => window.removeEventListener("search-results", handleSearch);
+  }, []);
 
   const displayed = searchResults
     ? searchResults
@@ -22,7 +29,6 @@ export default function HomePage() {
 
   return (
     <div>
-      <Navbar onSearch={setSearchResults} /> {/* 🔍 Thêm vào đây */}
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">
           {searchResults ? "Kết quả tìm kiếm" : "Danh sách bài đăng"}
