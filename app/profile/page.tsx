@@ -240,20 +240,23 @@ export default function ProfilePage() {
                     </button>
                 </div>
 
-                {/* Xác thực email */}
+                {/* --- XÁC THỰC EMAIL --- */}
                 <div className="mt-6 text-sm text-gray-600 flex flex-col items-center gap-3 w-full">
                     {profile.verifiedCode ? (
-                        <div className="flex items-center gap-2 text-green-600">
+                        // ✅ Nếu đã xác thực
+                        <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
                             <BadgeCheck className="w-4 h-4" />
-                            <span>Đã xác thực email</span>
+                            <span>Email đã được xác thực ✅</span>
                         </div>
                     ) : (
+                        // ❌ Nếu chưa xác thực
                         <>
                             <div className="flex items-center gap-2 text-red-500">
                                 <BadgeCheck className="w-4 h-4" />
                                 <span>Chưa xác thực email</span>
                             </div>
 
+                            {/* Ô nhập mã OTP */}
                             <input
                                 type="text"
                                 placeholder="Nhập mã OTP"
@@ -262,6 +265,7 @@ export default function ProfilePage() {
                                 className="border px-3 py-2 rounded-lg w-full text-sm focus:ring-2 focus:ring-orange-400"
                             />
 
+                            {/* Nút xác thực email */}
                             <button
                                 onClick={handleVerifyEmail}
                                 disabled={verifying}
@@ -269,6 +273,8 @@ export default function ProfilePage() {
                             >
                                 {verifying ? "🔄 Đang xác thực..." : "📧 Xác thực email"}
                             </button>
+
+                            {/* Nút gửi lại mã xác thực */}
                             <button
                                 onClick={handleResendOtp}
                                 disabled={verifying}
@@ -279,6 +285,7 @@ export default function ProfilePage() {
                         </>
                     )}
                 </div>
+
 
             </div>
 
