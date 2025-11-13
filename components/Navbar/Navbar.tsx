@@ -343,17 +343,19 @@ export default function Navbar() {
                                         Bài đăng yêu thích
                                     </button>
                                     
-                                    <button
-                                        onClick={() =>
-                                            router.push(
-                                                '/admin/chart'
-                                            )
-                                        }
-                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                                    >
-                                        Admin chart
-                                    </button>
-                                    
+                                    {/* Chỉ hiển thị Admin chart cho user có roleId = 1 (ADMIN) */}
+                                    {(userData.role?.roleId === 1 || userData.role === 'ADMIN') && (
+                                        <button
+                                            onClick={() =>
+                                                router.push(
+                                                    '/admin/chart'
+                                                )
+                                            }
+                                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                        >
+                                            Admin chart
+                                        </button>
+                                    )}
 
                                     <button
                                         onClick={handleLogout}
