@@ -11,6 +11,7 @@ import {
     BadgeCheck,
     Crown,
 } from "lucide-react";
+import EditProfileModal from './EditProfileModal';
 
 interface Role {
     roleId: number;
@@ -57,6 +58,7 @@ export default function ProfilePage() {
     const router = useRouter();
     const [otp, setOtp] = useState("");
     const [verifying, setVerifying] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
 
 
     useEffect(() => {
@@ -224,7 +226,10 @@ export default function ProfilePage() {
 
                 {/* Nút thao tác */}
                 <div className="mt-6 flex flex-col gap-2 w-full">
-                    <button className="bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600">
+                    <button
+                        onClick={() => setShowEditModal(true)}
+                        className="bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600"
+                    >
                         ✏️ Chỉnh sửa trang cá nhân
                     </button>
                     <button className="border py-2 rounded-lg hover:bg-gray-100">
@@ -288,6 +293,15 @@ export default function ProfilePage() {
 
 
             </div>
+            {/* ⚙️ Render modal chỉnh sửa hồ sơ */}
+            {showEditModal && (
+                <EditProfileModal
+                    profile={profile}
+                    onClose={() => setShowEditModal(false)}
+                    onUpdated={() => window.location.reload()}
+                />
+            )}
+
 
             {/* --- CỘT PHẢI: Danh sách bài đăng --- */}
             <div className="flex-1 bg-white border rounded-2xl shadow-sm p-6">
