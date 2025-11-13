@@ -90,6 +90,19 @@ export default function Navbar() {
         }
     }, []);
 
+    // Event listener để mở modal từ Banner
+    useEffect(() => {
+        const handleOpenModal = () => {
+            setShowCreateModal(true);
+        };
+        
+        window.addEventListener('open-create-listing-modal', handleOpenModal);
+        
+        return () => {
+            window.removeEventListener('open-create-listing-modal', handleOpenModal);
+        };
+    }, []);
+
     // ✅ Hàm gọi API tìm kiếm
     const handleSearch = async () => {
         if (!searchText.trim()) return;

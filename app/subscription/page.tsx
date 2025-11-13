@@ -4,6 +4,7 @@
 import { CheckCircle, Package, Star, Gem } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import SubscriptionBanner from '@/components/Banner/SubscriptionBanner';
 
 // Dữ liệu gói (đã thêm 'id' và 'priceValue')
 const pricingPlans = [
@@ -134,15 +135,18 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="bg-gray-100 dark:bg-slate-900">
+    <div className="bg-white min-h-screen">
+      {/* Banner chuyên dụng cho trang Subscription */}
+      <SubscriptionBanner />
+      
       <section className="container mx-auto px-6 py-24">
         
         {/* --- Tiêu đề --- */}
         <div className="text-center max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Bảng Giá Dịch Vụ
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
+          <p className="text-lg text-gray-600">
             Lựa chọn gói dịch vụ đăng tin phù hợp với nhu cầu của bạn.
           </p>
         </div>
@@ -154,7 +158,7 @@ export default function PricingPage() {
             <div
               key={plan.id} // Dùng key duy nhất
               className={`
-                relative group bg-white dark:bg-slate-800 rounded-2xl shadow-lg border-2
+                relative group bg-white rounded-2xl shadow-lg border-2
                 transition-all duration-300
                 ${plan.isPopular ? 'scale-105' : 'hover:shadow-xl'}
                 ${plan.borderColor}
@@ -172,24 +176,24 @@ export default function PricingPage() {
                 <div className="p-8 flex flex-col h-full">
                   <div className="flex-shrink-0">
                     <plan.icon className={`w-10 h-10 mb-4 ${plan.accentColor}`} />
-                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    <h3 className="text-3xl font-bold text-gray-900 mb-2">
                       {plan.name}
                     </h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    <p className="text-gray-500 mb-4">
                       {plan.description}
                     </p>
                   </div>
                   
                   <div className="flex-shrink-0 my-4">
-                    <span className="text-5xl font-extrabold text-gray-900 dark:text-white">
+                    <span className="text-5xl font-extrabold text-gray-900">
                       {plan.price}
                     </span>
-                    <span className="text-gray-500 dark:text-gray-400"> / gói</span>
+                    <span className="text-gray-500"> / gói</span>
                   </div>
 
-                  <hr className="border-gray-200 dark:border-slate-700 my-6" />
+                  <hr className="border-gray-200 my-6" />
 
-                  <ul className="space-y-4 text-gray-600 dark:text-gray-300 flex-grow">
+                  <ul className="space-y-4 text-gray-600 flex-grow">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-start">
                         <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" />
