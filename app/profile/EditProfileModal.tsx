@@ -9,9 +9,11 @@ interface EditProfileModalProps {
 
 export default function EditProfileModal({ profile, onClose, onUpdated }: EditProfileModalProps) {
     const [userName, setUserName] = useState(profile.userName || '');
-    const [phone, setPhone] = useState(profile.phone || '');
+    const [userEmail, setUserEmail] = useState(profile.userEmail || '');
+    const [password, setPassword] = useState('');
+    const [dob, setDob] = useState(profile.dob ? profile.dob.split('T')[0] : '');
     const [city, setCity] = useState(profile.city || '');
-    const [address, setAddress] = useState(profile.address || '');
+    const [phone, setPhone] = useState(profile.phone || '');
     const [loading, setLoading] = useState(false);
 
     const handleSave = async () => {
@@ -19,7 +21,8 @@ export default function EditProfileModal({ profile, onClose, onUpdated }: EditPr
         if (!stored) return alert('Bạn cần đăng nhập!');
         const { token } = JSON.parse(stored);
 
-        const body = { userName, phone, city, address };
+        // Gửi dữ liệu đúng với UpdateUserRequest
+        const body = { userName, userEmail, password, dob, city, phone };
 
         try {
             setLoading(true);
@@ -35,7 +38,7 @@ export default function EditProfileModal({ profile, onClose, onUpdated }: EditPr
             const data = await res.json();
             if (res.ok) {
                 alert('✅ Cập nhật thông tin thành công!');
-                onUpdated(); // Reload lại profile
+                onUpdated(); // reload lại profile
                 onClose();
             } else {
                 alert('❌ ' + (data.message || 'Không thể cập nhật thông tin.'));
@@ -61,6 +64,29 @@ export default function EditProfileModal({ profile, onClose, onUpdated }: EditPr
                 />
 
                 <input
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    placeholder="Email"
+                    className="border w-full p-2 rounded-lg"
+                />
+
+                <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Nhập mật khẩu mới (nếu muốn đổi)"
+                    className="border w-full p-2 rounded-lg"
+                />
+
+                <input
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    className="border w-full p-2 rounded-lg"
+                />
+
+                <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -72,22 +98,18 @@ export default function EditProfileModal({ profile, onClose, onUpdated }: EditPr
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="Tỉnh / Thành phố"
-                    className="border w-full p-2 rounded-lg"
-                />
-
-                <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Địa chỉ chi tiết"
+                    placeholder="Thành phố"
                     className="border w-full p-2 rounded-lg"
                 />
 
                 <div className="flex justify-end gap-2">
-                    <button onClick={onClose} className="px-4 py-2 rounded-lg border hover:bg-gray-100">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-lg border hover:bg-gray-100"
+                    >
                         Hủy
                     </button>
+
                     <button
                         onClick={handleSave}
                         disabled={loading}
