@@ -44,7 +44,7 @@ function InputWithUnit({
     );
 }
 
-export default function Navbar({ onSearch }: { onSearch?: (results: any[]) => void }) {
+export default function Navbar() {
     const router = useRouter();
     const [userData, setUserData] = useState<any>(null);
     const [showUserMenu, setShowUserMenu] = useState(false);
@@ -52,7 +52,8 @@ export default function Navbar({ onSearch }: { onSearch?: (results: any[]) => vo
     const [showNotify, setShowNotify] = useState(false);
     const [loading, setLoading] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
-    const [searchText, setSearchText] = useState('');
+    const [searchText, setSearchText] = useState("");
+
 
 
     // Common fields
@@ -88,6 +89,26 @@ export default function Navbar({ onSearch }: { onSearch?: (results: any[]) => vo
             setUserData(JSON.parse(stored));
         }
     }, []);
+
+    // ✅ Hàm gọi API tìm kiếm
+    const handleSearch = async () => {
+        if (!searchText.trim()) return;
+
+        try {
+            const res = await fetch(
+                `http://localhost:8080/api/listing/search/title?title=${encodeURIComponent(searchText)}`
+            );
+            if (!res.ok) throw new Error("Không thể tìm kiếm");
+            const data = await res.json();
+
+            // 🔥 Gửi event chứa kết quả về cho trang chủ
+            window.dispatchEvent(new CustomEvent("search-results", { detail: data }));
+        } catch (err) {
+            console.error("Lỗi tìm kiếm:", err);
+            alert("Không thể tải kết quả tìm kiếm!");
+        }
+    };
+
 
     // 🔔 Gọi API lấy danh sách thông báo khi mở menu thông báo
     useEffect(() => {
@@ -215,25 +236,18 @@ export default function Navbar({ onSearch }: { onSearch?: (results: any[]) => vo
                     ⚡ EV Shop
                 </div>
 
-                {/* Search Bar */}
-                <div className="flex items-center bg-white rounded-full px-3 py-1 w-[320px] md:w-[400px]">
+
+                <div className="flex items-center bg-gray-100 rounded-full px-3 py-1 w-[320px] md:w-[400px]">
                     <input
                         type="text"
-                        placeholder="Tìm kiếm sản phẩm..."
+                        placeholder="Tìm kiếm bài đăng..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
-                        className="flex-1 outline-none bg-transparent text-sm text-gray-700"
+                        className="flex-1 bg-transparent outline-none text-sm text-gray-700"
                     />
                     <button
-                        onClick={async () => {
-                            if (!searchText.trim()) return;
-                            const res = await fetch(`http://localhost:8080/api/listing/search?keyword=${encodeURIComponent(searchText)}`);
-                            // const res = await fetch(`https://mocki.io/v1/dec38df7-8cec-4977-8961-2b7a1553bbac`);
-                            const data = await res.json();
-                            window.dispatchEvent(new CustomEvent("search-results", { detail: data }));
-                            // onSearch?.(data); // gửi kết quả về page
-                        }}
-                        className="bg-yellow-400 text-gray-800 font-medium px-3 py-1 rounded-full text-sm"
+                        onClick={handleSearch}
+                        className="bg-yellow-400 text-gray-800 font-medium px-3 py-1 rounded-full text-sm ml-2"
                     >
                         Tìm
                     </button>
