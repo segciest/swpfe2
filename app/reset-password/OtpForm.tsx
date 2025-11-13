@@ -10,16 +10,24 @@ export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
 
+
     const handleVerifyOtp = async () => {
         const token = localStorage.getItem('resetToken');
         if (!token) return setMessage('Thiếu token! Vui lòng gửi lại OTP.');
 
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/verify-reset-otp?otp=' + otp, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await fetch(
+                "http://localhost:8080/api/users/verify-reset-otp",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: new URLSearchParams({ otp }),
+                }
+            );
 
             const data = await res.json();
             if (res.ok) {
@@ -34,7 +42,6 @@ export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
             setLoading(false);
         }
     };
-
     return (
         <div className="space-y-3">
             <input

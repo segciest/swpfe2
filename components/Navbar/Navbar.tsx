@@ -52,6 +52,9 @@ export default function Navbar() {
     const [showNotify, setShowNotify] = useState(false);
     const [loading, setLoading] = useState(false);
     const [notifications, setNotifications] = useState<any[]>([]);
+    const [searchText, setSearchText] = useState("");
+
+
 
     // Common fields
     const [categoryId, setCategoryId] = useState<number>(1);
@@ -86,6 +89,26 @@ export default function Navbar() {
             setUserData(JSON.parse(stored));
         }
     }, []);
+
+    // ✅ Hàm gọi API tìm kiếm
+    const handleSearch = async () => {
+        if (!searchText.trim()) return;
+
+        try {
+            const res = await fetch(
+                `http://localhost:8080/api/listing/search/title?title=${encodeURIComponent(searchText)}`
+            );
+            if (!res.ok) throw new Error("Không thể tìm kiếm");
+            const data = await res.json();
+
+            // 🔥 Gửi event chứa kết quả về cho trang chủ
+            window.dispatchEvent(new CustomEvent("search-results", { detail: data }));
+        } catch (err) {
+            console.error("Lỗi tìm kiếm:", err);
+            alert("Không thể tải kết quả tìm kiếm!");
+        }
+    };
+
 
     // 🔔 Gọi API lấy danh sách thông báo khi mở menu thông báo
     useEffect(() => {
@@ -213,16 +236,23 @@ export default function Navbar() {
                     ⚡ EV Shop
                 </div>
 
-                <div className="flex items-center bg-white rounded-full px-3 py-1 w-[320px] md:w-[400px]">
+                {/* Thanh tìm kiếm */}
+                <div className="flex items-center bg-gray-100 rounded-full px-3 py-1 w-[320px] md:w-[400px]">
                     <input
                         type="text"
-                        placeholder="Tìm kiếm sản phẩm..."
-                        className="flex-1 outline-none bg-transparent text-sm text-gray-700"
+                        placeholder="Tìm kiếm bài đăng..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        className="flex-1 bg-transparent outline-none text-sm text-gray-700"
                     />
-                    <button className="bg-yellow-400 text-gray-800 font-medium px-3 py-1 rounded-full text-sm">
+                    <button
+                        onClick={handleSearch}
+                        className="bg-yellow-400 text-gray-800 font-medium px-3 py-1 rounded-full text-sm ml-2"
+                    >
                         Tìm
                     </button>
                 </div>
+
 
                 <div className="flex items-center gap-4 relative">
                     {/* Thông báo */}
@@ -342,20 +372,17 @@ export default function Navbar() {
                                     >
                                         Bài đăng yêu thích
                                     </button>
-                                    
-                                    {/* Chỉ hiển thị Admin chart cho user có roleId = 1 (ADMIN) */}
-                                    {(userData.role?.roleId === 1 || userData.role === 'ADMIN') && (
-                                        <button
-                                            onClick={() =>
-                                                router.push(
-                                                    '/admin/chart'
-                                                )
-                                            }
-                                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                                        >
-                                            Admin chart
-                                        </button>
-                                    )}
+
+                                    <button
+                                        onClick={() =>
+                                            router.push(
+                                                '/admin/chart'
+                                            )
+                                        }
+                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                    >
+                                        Admin chart
+                                    </button>
 
                                     <button
                                         onClick={handleLogout}
