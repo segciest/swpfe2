@@ -9,7 +9,7 @@ interface OtpFormProps {
 export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
-    const [resending, setResending] = useState(false);
+
 
     const handleVerifyOtp = async () => {
         const token = localStorage.getItem('resetToken');
@@ -17,14 +17,17 @@ export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
 
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:8080/api/users/verify-reset-otp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: new URLSearchParams({ otp }),
-            });
+            const res = await fetch(
+                "http://localhost:8080/api/users/verify-reset-otp",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: new URLSearchParams({ otp }),
+                }
+            );
 
             const data = await res.json();
             if (res.ok) {
@@ -39,31 +42,6 @@ export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
             setLoading(false);
         }
     };
-
-    const handleResendOtp = async () => {
-        const token = localStorage.getItem('resetToken');
-        if (!token) return setMessage('Thiếu token!');
-
-        setResending(true);
-        try {
-            const res = await fetch('http://localhost:8080/api/users/send-verification-email', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setMessage(data.message || 'Mã OTP mới đã được gửi!');
-            } else {
-                setMessage(data.error || 'Không thể gửi lại mã OTP.');
-            }
-        } catch {
-            setMessage('Lỗi kết nối server khi gửi lại OTP.');
-        } finally {
-            setResending(false);
-        }
-    };
-
     return (
         <div className="space-y-3">
             <input
@@ -79,14 +57,6 @@ export default function OtpForm({ setStep, setMessage }: OtpFormProps) {
                 className="w-full bg-green-600 text-white rounded-lg py-2 hover:bg-green-700 disabled:opacity-50"
             >
                 {loading ? 'Đang xác minh...' : 'Xác minh OTP'}
-            </button>
-
-            <button
-                onClick={handleResendOtp}
-                disabled={resending}
-                className="w-full bg-gray-200 text-gray-700 rounded-lg py-2 hover:bg-gray-300 disabled:opacity-50"
-            >
-                {resending ? 'Đang gửi lại...' : 'Gửi lại mã OTP'}
             </button>
         </div>
     );

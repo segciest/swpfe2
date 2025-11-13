@@ -236,7 +236,7 @@ export default function Navbar() {
                     ⚡ EV Shop
                 </div>
 
-
+                {/* Thanh tìm kiếm */}
                 <div className="flex items-center bg-gray-100 rounded-full px-3 py-1 w-[320px] md:w-[400px]">
                     <input
                         type="text"

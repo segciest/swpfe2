@@ -126,6 +126,32 @@ export default function ProfilePage() {
         }
     };
 
+    // ✅ Gọi API gửi lại mã OTP xác thực email
+    const handleResendOtp = async () => {
+        const stored = localStorage.getItem("userData");
+        if (!stored) return alert("Bạn cần đăng nhập!");
+        const { token } = JSON.parse(stored);
+
+        try {
+            setVerifying(true);
+            const res = await fetch("http://localhost:8080/api/users/send-verification-email", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alert("✅ " + (data.message || "Mã xác thực mới đã được gửi đến email của bạn."));
+            } else {
+                alert("❌ " + (data.error || "Không thể gửi lại mã xác thực."));
+            }
+        } catch (err: any) {
+            alert("⚠️ Lỗi khi gửi lại mã xác thực: " + err.message);
+        } finally {
+            setVerifying(false);
+        }
+    };
+
 
 
 
@@ -242,6 +268,13 @@ export default function ProfilePage() {
                                 className="bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 w-full font-medium"
                             >
                                 {verifying ? "🔄 Đang xác thực..." : "📧 Xác thực email"}
+                            </button>
+                            <button
+                                onClick={handleResendOtp}
+                                disabled={verifying}
+                                className="border py-2 rounded-lg hover:bg-gray-100 w-full text-gray-700 font-medium"
+                            >
+                                {verifying ? "⏳ Đang gửi lại..." : "📨 Gửi lại mã xác thực"}
                             </button>
                         </>
                     )}
