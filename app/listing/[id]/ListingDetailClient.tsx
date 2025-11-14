@@ -1,6 +1,16 @@
 "use client";
+import { useEffect } from "react";
 
 import { useState } from "react";
+const [isLoggedIn, setIsLoggedIn] = useState(false);
+const [showLoginPopup, setShowLoginPopup] = useState(false);
+
+
+useEffect(() => {
+    const user = localStorage.getItem("userData");
+    setIsLoggedIn(!!user);
+}, []);
+
 
 export default function ListingDetailClient({ data }: { data: any }) {
     const [mainImage, setMainImage] = useState(data.imageUrls?.[0] || "/no-image.png");
@@ -71,12 +81,33 @@ export default function ListingDetailClient({ data }: { data: any }) {
 
                     {/* Nút liên hệ */}
                     <div className="flex gap-3 mb-6">
-                        <button className="flex-1 border border-gray-300 py-3 rounded-lg font-medium hover:bg-gray-50">
-                            ☎️ Gọi {data.seller?.phone || data.contact || "ẩn"}
+                        <button
+                            className="flex-1 border border-gray-300 py-3 rounded-lg font-medium hover:bg-gray-50"
+                            onClick={() => {
+                                if (!isLoggedIn) {
+                                    setShowLoginPopup(true);
+                                    return;
+                                }
+                                // Nếu đã đăng nhập, thực hiện gọi
+                                window.location.href = `tel:${data.seller?.phone}`;
+                            }}
+                        >
+                            ☎️ Gọi {isLoggedIn ? (data.seller?.phone || "ẩn") : "**** *** ***"}
                         </button>
-                        <button className="flex-1 bg-yellow-400 hover:bg-yellow-500 py-3 rounded-lg font-semibold">
+                        <button
+                            className="flex-1 bg-yellow-400 hover:bg-yellow-500 py-3 rounded-lg font-semibold"
+                            onClick={() => {
+                                if (!isLoggedIn) {
+                                    setShowLoginPopup(true);
+                                    return;
+                                }
+
+                                alert("Đi tới chat (logic chat ở đây)");
+                            }}
+                        >
                             💬 Chat
                         </button>
+
                     </div>
 
                     {/* Thông tin người bán */}
@@ -126,6 +157,32 @@ export default function ListingDetailClient({ data }: { data: any }) {
                     <p className="text-gray-500 text-sm">Chưa có bình luận nào.</p>
                 </div>
             </div>
+
+            {/* --- POPUP MODAL */}
+            {showLoginPopup && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-xl w-[90%] max-w-sm text-center shadow-lg">
+                        <h3 className="text-lg font-bold mb-2">Bạn cần đăng nhập</h3>
+                        <p className="text-gray-600 mb-4">
+                            Vui lòng đăng nhập để xem số điện thoại hoặc chat với người bán.
+                        </p>
+
+                        <button
+                            onClick={() => window.location.href = "/login-register"}
+                            className="w-full bg-yellow-400 hover:bg-yellow-500 py-2 rounded-lg font-semibold mb-2"
+                        >
+                            Đăng nhập ngay
+                        </button>
+                        <button
+                            onClick={() => setShowLoginPopup(false)}
+                            className="w-full border py-2 rounded-lg font-medium"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

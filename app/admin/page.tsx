@@ -12,27 +12,20 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(false);
     const [selected, setSelected] = useState<any | null>(null);
     const router = useRouter();
+    // Lấy role từ localStorage
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('userData') : null;
+    const userData = stored ? JSON.parse(stored) : null;
+    const role = userData?.role?.roleName || userData?.role || '';
 
-    // ✅ Kiểm tra quyền truy cập admin
+    // ✅ Kiểm tra quyền truy cập
     useEffect(() => {
-        const stored = localStorage.getItem('userData');
-        if (!stored) {
-            router.push('/');
-            return;
-        }
-
-        try {
-            const userData = JSON.parse(stored);
-            const role = userData.role?.roleName || userData.role;
-            if (role !== 'ADMIN' && role !== 'MANAGER') {
-                alert('🚫 Bạn không có quyền truy cập trang này!');
-                router.push('/');
-            }
-        } catch {
+        if (!userData || (role !== 'ADMIN' && role !== 'MODERATOR')) {
+            alert('🚫 Bạn không có quyền truy cập trang này!');
             router.push('/');
         }
-    }, [router]);
+    }, [router, role, userData]);
 
+    // get token
     const getToken = () => JSON.parse(localStorage.getItem('userData') || '{}').token;
 
     // 🚀 Lấy danh sách bài cần duyệt
@@ -177,6 +170,7 @@ export default function AdminDashboard() {
                             <p className="text-gray-600 text-center mt-20">Không có bài đăng nào cần duyệt.</p>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {/* mapp listing */}
                                 {listings.map((item) => (
                                     <div key={item.listingId} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
                                         <img src={item.imageUrls?.[0] || '/no-image.png'} alt={item.title} className="w-full h-40 object-cover" />
@@ -192,18 +186,22 @@ export default function AdminDashboard() {
                                                     <Eye size={16} /> Chi tiết
                                                 </button>
                                                 <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => handleVerify(item.listingId)}
-                                                        className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
-                                                    >
-                                                        <CheckCircle size={16} /> Duyệt
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeny(item.listingId)}
-                                                        className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
-                                                    >
-                                                        <XCircle size={16} /> Từ chối
-                                                    </button>
+                                                    {role === 'MODERATOR' && (
+                                                        <button
+                                                            onClick={() => handleVerify(item.listingId)}
+                                                            className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
+                                                        >
+                                                            <CheckCircle size={16} /> Duyệt
+                                                        </button>
+                                                    )}
+                                                    {role === 'MODERATOR' && (
+                                                        <button
+                                                            onClick={() => handleDeny(item.listingId)}
+                                                            className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
+                                                        >
+                                                            <XCircle size={16} /> Từ chối
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
