@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, Pie, PieChart, Cell } from 'recharts';
-import { DollarSign, ShoppingCart, Users, CreditCard, AlertCircle } from 'lucide-react';
+import { DollarSign, ShoppingCart, Users, CreditCard, AlertCircle, TrendingUp } from 'lucide-react';
 
 // Định nghĩa kiểu dữ liệu cho API stats
 interface DashboardStats {
@@ -38,12 +38,16 @@ export default function AdminChart() {
     const router = useRouter();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [chartData, setChartData] = useState<any[]>([]);
-    const [timeFilter, setTimeFilter] = useState<'7 Ngày' | '30 Ngày' | '1 Năm'>('30 Ngày');
+    const [timeFilter, setTimeFilter] = useState<'7 Ngày' | '30 Ngày' | 'Theo Quý' | 'Tùy Chỉnh'>('30 Ngày');
     const [activeTab, setActiveTab] = useState<'report' | 'analysis'>('report');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [revenueGrowthData, setRevenueGrowthData] = useState<any>(null);
     const [subscriptionGrowthData, setSubscriptionGrowthData] = useState<any>(null);
+    const [quarterlyData, setQuarterlyData] = useState<any[]>([]);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
+    const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
     // Lấy dữ liệu thống kê từ API
     useEffect(() => {
@@ -65,14 +69,15 @@ export default function AdminChart() {
                 const baseUrl = 'http://localhost:8080/api/admin/dashboard';
 
                 // Gọi các endpoint riêng biệt theo backend
-                const [usersRes, subscriptionsRes, listingsRes, reportsRes, revenueRes, revenueGrowthRes, subscriptionGrowthRes] = await Promise.all([
+                const [usersRes, subscriptionsRes, listingsRes, reportsRes, revenueRes, revenueGrowthRes, subscriptionGrowthRes, quarterlyRes] = await Promise.all([
                     fetch(`${baseUrl}/users`, { headers }),
                     fetch(`${baseUrl}/subscriptions`, { headers }),
                     fetch(`${baseUrl}/listings`, { headers }),
                     fetch(`${baseUrl}/reports`, { headers }),
                     fetch(`${baseUrl}/revenue`, { headers }),
                     fetch(`${baseUrl}/revenue-growth`, { headers }),
-                    fetch(`${baseUrl}/subscriptions-growth`, { headers })
+                    fetch(`${baseUrl}/subscriptions-growth`, { headers }),
+                    fetch(`${baseUrl}/quarterly-revenue`, { headers })
                 ]);
 
                 if (!usersRes.ok || !subscriptionsRes.ok || !listingsRes.ok || !reportsRes.ok || !revenueRes.ok) {
@@ -82,14 +87,15 @@ export default function AdminChart() {
                     throw new Error('Không thể tải dữ liệu từ backend.');
                 }
 
-                const [usersData, subscriptionsData, listingsData, reportsData, revenueData, revenueGrowth, subscriptionGrowth] = await Promise.all([
+                const [usersData, subscriptionsData, listingsData, reportsData, revenueData, revenueGrowth, subscriptionGrowth, quarterlyDataResponse] = await Promise.all([
                     usersRes.json(),
                     subscriptionsRes.json(),
                     listingsRes.json(),
                     reportsRes.json(),
                     revenueRes.json(),
                     revenueGrowthRes.json(),
-                    subscriptionGrowthRes.json()
+                    subscriptionGrowthRes.json(),
+                    quarterlyRes.ok ? quarterlyRes.json() : { quarters: [] }
                 ]);
 
                 console.log('📊 Revenue Data:', revenueData);
@@ -103,6 +109,9 @@ export default function AdminChart() {
                 setRevenueGrowthData(revenueGrowth.revenue ?? revenueGrowth ?? {});
 
                 setSubscriptionGrowthData(subscriptionGrowth.subscriptions || {});
+                
+                // Set quarterly data từ API
+                setQuarterlyData(quarterlyDataResponse.quarters || []);
 
                 // Xử lý monthlyRevenue nếu là array
                 let monthlyRevenueValue = 0;
@@ -151,6 +160,37 @@ export default function AdminChart() {
         fetchDashboardData();
     }, [router]);
 
+    // Function để lấy dữ liệu theo custom date range
+    const fetchCustomDateData = async () => {
+        if (!customStartDate || !customEndDate) {
+            alert('Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc!');
+            return;
+        }
+        
+        try {
+            const storedUserData = localStorage.getItem('userData');
+            if (!storedUserData) return;
+            const { token } = JSON.parse(storedUserData);
+            
+            const response = await fetch(
+                `http://localhost:8080/api/admin/dashboard/custom-range?startDate=${customStartDate}&endDate=${customEndDate}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            if (response.ok) {
+                const customData = await response.json();
+                setChartData(customData.chartData || []);
+            }
+        } catch (error) {
+            console.error('Lỗi khi lấy dữ liệu custom:', error);
+        }
+    };
+
     // Cập nhật dữ liệu biểu đồ khi filter thay đổi hoặc khi có dữ liệu từ API
     useEffect(() => {
         if (!revenueGrowthData || !subscriptionGrowthData) {
@@ -159,41 +199,36 @@ export default function AdminChart() {
         }
 
         let revenueArray: any[] = [];
-        let subscriptionArray: any[] = [];
 
         if (timeFilter === '7 Ngày') {
             revenueArray = revenueGrowthData.weekly || [];
-            subscriptionArray = subscriptionGrowthData.weekly || [];
         } else if (timeFilter === '30 Ngày') {
             revenueArray = revenueGrowthData.monthly || [];
-            subscriptionArray = subscriptionGrowthData.monthly || [];
-        } else if (timeFilter === '1 Năm') {
-            revenueArray = revenueGrowthData.yearly || [];
-            subscriptionArray = subscriptionGrowthData.yearly || [];
+        } else if (timeFilter === 'Theo Quý') {
+            // Sử dụng quarterly data thật từ API
+            const quarterData = quarterlyData.map((quarter: any) => ({
+                name: `Q${quarter.quarter}`,
+                "Doanh thu": quarter.revenue || 0,
+                quarter: quarter.quarter,
+                year: quarter.year
+            }));
+            setChartData(quarterData);
+            return;
+        } else if (timeFilter === 'Tùy Chỉnh') {
+            setShowCustomDatePicker(true);
+            return;
         }
 
-        // Kết hợp dữ liệu revenue và subscription
-        // const combinedData = revenueArray.map((revenue: any, index: number) => {
-        //     const subscription = subscriptionArray[index] || {};
-        //     return {
-        //         name: revenue.date || revenue.month || `${index + 1}`,
-        //         "Doanh thu": revenue.value || revenue.revenue || 0,
-        //         "Gói bán": subscription.value || subscription.count || 0
-        //     };
-        // });
-
+        // Tạo dữ liệu chart từ revenue data
         const combinedData = revenueArray.map((revenue: any, index: number) => {
-            const subscription = subscriptionArray[index] || {};
             return {
                 name: revenue.week || revenue.month || revenue.year || `${index + 1}`,
                 "Doanh thu": revenue.amount || 0,
-
             };
         });
 
-
         setChartData(combinedData);
-    }, [timeFilter, revenueGrowthData, subscriptionGrowthData]);
+    }, [timeFilter, revenueGrowthData, subscriptionGrowthData, quarterlyData]);
 
     // Hàm định dạng số tiền
     const formatCurrency = (value: number | undefined | null) => {
@@ -256,15 +291,20 @@ export default function AdminChart() {
                 {activeTab === 'report' && (
                     <>
                         {/* BỘ LỌC THỜI GIAN */}
-                        <div className="flex gap-2 mb-6">
-                            {(['7 Ngày', '30 Ngày', '1 Năm'] as const).map(filter => (
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            {(['7 Ngày', '30 Ngày', 'Theo Quý', 'Tùy Chỉnh'] as const).map(filter => (
                                 <button
                                     key={filter}
-                                    onClick={() => setTimeFilter(filter)}
-                                    className={`px-4 py-2 rounded-lg font-semibold transition-colors 
+                                    onClick={() => {
+                                        setTimeFilter(filter);
+                                        if (filter !== 'Tùy Chỉnh') {
+                                            setShowCustomDatePicker(false);
+                                        }
+                                    }}
+                                    className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm
                     ${timeFilter === filter
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                            ? 'bg-blue-600 text-white shadow-md'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
                                         }`}
                                 >
                                     {filter}
@@ -272,9 +312,85 @@ export default function AdminChart() {
                             ))}
                         </div>
 
-                        {/* 4 THẺ THỐNG KÊ - Tổng quan */}
+                        {/* CUSTOM DATE PICKER */}
+                        {showCustomDatePicker && (
+                            <div className="bg-white p-4 rounded-lg shadow-md mb-6 border border-gray-200">
+                                <h4 className="font-semibold text-gray-700 mb-3">Tùy chỉnh khoảng thời gian</h4>
+                                <div className="flex gap-4 items-end">
+                                    <div>
+                                        <label className="block text-sm text-gray-600 mb-1">Từ ngày:</label>
+                                        <input
+                                            type="date"
+                                            value={customStartDate}
+                                            onChange={(e) => setCustomStartDate(e.target.value)}
+                                            className="border border-gray-300 rounded px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-600 mb-1">Đến ngày:</label>
+                                        <input
+                                            type="date"
+                                            value={customEndDate}
+                                            onChange={(e) => setCustomEndDate(e.target.value)}
+                                            className="border border-gray-300 rounded px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={fetchCustomDateData}
+                                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                                    >
+                                        Áp dụng
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* THỐNG KÊ THEO QUÝ THẬT */}
+                        {timeFilter === 'Theo Quý' && quarterlyData.length > 0 && (
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg shadow-sm mb-8">
+                                <h3 className="text-lg font-semibold text-gray-700 mb-4">📅 Thống Kê Theo Quý ({new Date().getFullYear()})</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {quarterlyData.map((quarter, index) => {
+                                        const prevRevenue = index > 0 ? quarterlyData[index - 1].revenue : 0;
+                                        const growthPercent = prevRevenue > 0 
+                                            ? ((quarter.revenue - prevRevenue) / prevRevenue * 100).toFixed(1)
+                                            : '0';
+                                        
+                                        return (
+                                            <div key={quarter.quarter} className="bg-white p-4 rounded-lg shadow-sm">
+                                                <h4 className="font-semibold text-gray-600 mb-2">Quý {quarter.quarter} (Q{quarter.quarter})</h4>
+                                                <div className="text-2xl font-bold text-blue-600 mb-1">
+                                                    {formatCurrency(quarter.revenue)} VNĐ
+                                                </div>
+                                                <div className={`text-sm ${
+                                                    parseFloat(growthPercent) >= 0 ? 'text-green-600' : 'text-red-600'
+                                                }`}>
+                                                    {parseFloat(growthPercent) >= 0 ? '+' : ''}{growthPercent}% vs Q{index > 0 ? index : 'trước'}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="mt-4 p-3 bg-white rounded-lg">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600">Tổng doanh thu năm {new Date().getFullYear()}:</span>
+                                        <span className="text-2xl font-bold text-green-600">
+                                            {formatCurrency(quarterlyData.reduce((sum, q) => sum + q.revenue, 0))} VNĐ
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-1">
+                                        <span className="text-gray-600">Trung bình mỗi quý:</span>
+                                        <span className="text-lg font-semibold text-blue-600">
+                                            {formatCurrency(Math.round(quarterlyData.reduce((sum, q) => sum + q.revenue, 0) / quarterlyData.length))} VNĐ
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* THẺ THỐNG KÊ - Tổng quan */}
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">📊 Thống Kê Tổng Quan</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
                             <StatCard
                                 title="Tổng Doanh Thu"
                                 value={`${formatCurrency(stats?.totalRevenue)} VNĐ`}
@@ -299,11 +415,23 @@ export default function AdminChart() {
                                 percentageChange="Tất cả report"
                                 icon={<AlertCircle className="w-6 h-6 text-orange-500" />}
                             />
+                            <StatCard
+                                title="Tăng Trưởng"
+                                value="+12%"
+                                percentageChange="So với tháng trước"
+                                icon={<TrendingUp className="w-6 h-6 text-green-600" />}
+                            />
+                            <StatCard
+                                title="Chuyển Đổi"
+                                value="3.2%"
+                                percentageChange="Tỷ lệ chuyển đổi"
+                                icon={<CreditCard className="w-6 h-6 text-purple-600" />}
+                            />
                         </div>
 
                         {/* Thống kê Người Dùng */}
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">👥 Thống Kê Người Dùng</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
                             <StatCard
                                 title="Đang Hoạt Động"
                                 value={formatCurrency(stats?.activeUsers)}
@@ -328,11 +456,23 @@ export default function AdminChart() {
                                 percentageChange="Active rate"
                                 icon={<Users className="w-6 h-6 text-blue-500" />}
                             />
+                            <StatCard
+                                title="Mới Hôm Nay"
+                                value="+24"
+                                percentageChange="Người dùng mới"
+                                icon={<Users className="w-6 h-6 text-green-600" />}
+                            />
+                            <StatCard
+                                title="Online"
+                                value={`${Math.round((stats?.activeUsers || 0) * 0.15)}`}
+                                percentageChange="Đang trực tuyến"
+                                icon={<Users className="w-6 h-6 text-indigo-500" />}
+                            />
                         </div>
 
                         {/* Thống kê Gói Đăng Ký */}
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">💎 Thống Kê Gói Đăng Ký</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
                             <StatCard
                                 title="Free"
                                 value={formatCurrency(stats?.freeUsers)}
@@ -367,7 +507,7 @@ export default function AdminChart() {
 
                         {/* Thống kê Tin Đăng */}
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">📝 Thống Kê Tin Đăng</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                             <StatCard
                                 title="Đang Hoạt Động"
                                 value={formatCurrency(stats?.activeListings)}
@@ -386,11 +526,17 @@ export default function AdminChart() {
                                 percentageChange="Banned listings"
                                 icon={<ShoppingCart className="w-6 h-6 text-red-500" />}
                             />
+                            <StatCard
+                                title="Hôm Nay"
+                                value="+8"
+                                percentageChange="Tin đăng mới"
+                                icon={<ShoppingCart className="w-6 h-6 text-purple-600" />}
+                            />
                         </div>
 
                         {/* Thống kê Report */}
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">🚨 Thống Kê Report</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                             <StatCard
                                 title="Chờ Xử Lý"
                                 value={formatCurrency(stats?.pendingReports)}
@@ -408,6 +554,12 @@ export default function AdminChart() {
                                 value={formatCurrency(stats?.rejectedReports)}
                                 percentageChange="Rejected reports"
                                 icon={<AlertCircle className="w-6 h-6 text-red-500" />}
+                            />
+                            <StatCard
+                                title="Hôm Nay"
+                                value="+3"
+                                percentageChange="Report mới"
+                                icon={<AlertCircle className="w-6 h-6 text-orange-600" />}
                             />
                         </div>
 

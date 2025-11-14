@@ -16,14 +16,14 @@ export default function RootLayout({
   // Ẩn navbar nếu pathname nằm trong nhóm (auth)
   const isAuthPage = pathname.startsWith("/login-register") || pathname.startsWith("/(auth)");
   
-  // Ẩn banner ở trang subscription
-  const isSubscriptionPage = pathname === "/subscription";
+  // Chỉ hiển thị banner ở trang chủ
+  const isHomePage = pathname === "/";
 
   return (
     <html lang="vi">
       <body className="bg-gray-50">
         {!isAuthPage && <Navbar />} {/* chỉ hiển thị khi không ở (auth) */}
-        {!isAuthPage && !isSubscriptionPage && <Banner />} {/* Ẩn Banner ở subscription */}
+        {!isAuthPage && isHomePage && <Banner />} {/* Chỉ hiển thị Banner ở trang chủ */}
         <main>{children}</main>
       </body>
     </html>
