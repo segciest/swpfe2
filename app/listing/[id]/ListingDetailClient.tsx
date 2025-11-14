@@ -2,18 +2,15 @@
 import { useEffect } from "react";
 
 import { useState } from "react";
-const [isLoggedIn, setIsLoggedIn] = useState(false);
-const [showLoginPopup, setShowLoginPopup] = useState(false);
-
-
-useEffect(() => {
-    const user = localStorage.getItem("userData");
-    setIsLoggedIn(!!user);
-}, []);
-
 
 export default function ListingDetailClient({ data }: { data: any }) {
     const [mainImage, setMainImage] = useState(data.imageUrls?.[0] || "/no-image.png");
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [showLoginPopup, setShowLoginPopup] = useState(false);
+    useEffect(() => {
+        const user = localStorage.getItem("userData");
+        setIsLoggedIn(!!user);
+    }, []);
 
     return (
         <div className="max-w-6xl mx-auto p-6">
