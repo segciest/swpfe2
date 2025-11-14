@@ -78,7 +78,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       formData.append("listingId", listing.listingId);
       formData.append("reason", reportReason.trim());
       reportFiles.forEach((file, index) => {
-        formData.append("images", file);
+        formData.append("file", file);
       });
 
       const res = await fetch("http://localhost:8080/api/report/create", {
