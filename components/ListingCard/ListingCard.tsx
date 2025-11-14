@@ -20,6 +20,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [loading, setLoading] = useState(false);
+  const [reportFiles, setReportFiles] = useState<File[]>([]);
 
   // ❤️ Toggle yêu thích
   const handleToggleFavorite = async (e: React.MouseEvent) => {
@@ -73,16 +74,17 @@ export default function ListingCard({ listing }: { listing: Listing }) {
 
     setLoading(true);
     try {
+      const formData = new FormData();
+      formData.append("listingId", listing.listingId);
+      formData.append("reason", reportReason.trim());
+      reportFiles.forEach((file, index) => {
+        formData.append("images", file);
+      });
+
       const res = await fetch("http://localhost:8080/api/report/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          listingId: listing.listingId,
-          reason: reportReason.trim(),
-        }),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       });
 
       if (!res.ok) {
@@ -93,6 +95,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       setReported(true);
       setShowReportModal(false);
       setReportReason("");
+      setReportFiles([]);
       alert("✅ Báo cáo thành công! Quản trị viên sẽ xem xét bài đăng này.");
     } catch (err) {
       console.error("Lỗi khi gửi báo cáo:", err);
@@ -195,6 +198,23 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                 className="w-full border rounded-lg p-2 text-sm text-gray-700 focus:ring-2 focus:ring-yellow-400 outline-none"
                 placeholder="Nhập lý do báo cáo..."
               />
+              <div className="mt-3">
+                <label className="block text-sm font-medium mb-1">Hình ảnh báo cáo (tối đa 5)</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => {
+                    const selectedFiles = Array.from(e.target.files || []);
+                    if (selectedFiles.length > 5) {
+                      alert("Chỉ được chọn tối đa 5 hình ảnh!");
+                      return;
+                    }
+                    setReportFiles(selectedFiles);
+                  }}
+                  className="w-full text-sm"
+                />
+              </div>
 
               <div className="flex justify-end gap-3 mt-4">
                 <button
