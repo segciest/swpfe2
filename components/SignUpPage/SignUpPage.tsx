@@ -16,6 +16,7 @@ interface RegisterForm {
     userPassword: string;
     phone: string;
     dob: string;
+    city: string;
 }
 
 export default function SignUpPage() {
@@ -26,6 +27,7 @@ export default function SignUpPage() {
         userPassword: '',
         phone: '',
         dob: '',
+        city: '',
     });
     const [loading, setLoading] = useState<boolean>(false);
     const [message, setMessage] = useState<string>('');
@@ -134,6 +136,14 @@ export default function SignUpPage() {
                             fontSize: '14px',
                             color: '#333',
                         }}
+                    />
+                    <input
+                        type="text"
+                        name="city"
+                        placeholder="City"
+                        value={form.city}
+                        onChange={handleChange}
+                        required
                     />
                 </label>
 
