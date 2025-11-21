@@ -31,6 +31,22 @@ export default function SignUpPage() {
     });
     const [loading, setLoading] = useState<boolean>(false);
     const [message, setMessage] = useState<string>('');
+    const provinces = [
+        "Hà Nội", "TP Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
+        "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu",
+        "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước",
+        "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông",
+        "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang",
+        "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang", "Hòa Bình",
+        "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
+        "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định",
+        "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên",
+        "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị",
+        "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên",
+        "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang",
+        "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+    ];
+
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -137,14 +153,34 @@ export default function SignUpPage() {
                             color: '#333',
                         }}
                     />
-                    <input
-                        type="text"
-                        name="city"
-                        placeholder="City"
-                        value={form.city}
-                        onChange={handleChange}
-                        required
-                    />
+                    <label style={{ width: '100%' }}>
+                        <span style={{ display: 'block', fontSize: '14px', color: '#666', marginBottom: '4px' }}>
+                            City
+                        </span>
+
+                        <select
+                            name="city"
+                            value={form.city}
+                            onChange={(e) => setForm({ ...form, city: e.target.value })}
+                            required
+                            style={{
+                                width: '100%',
+                                padding: '10px',
+                                borderRadius: '5px',
+                                border: '1px solid #ccc',
+                                outline: 'none',
+                                fontSize: '14px',
+                                color: '#333',
+                                backgroundColor: 'white'
+                            }}
+                        >
+                            <option value="">-- Select city --</option>
+                            {provinces.map((p) => (
+                                <option key={p} value={p}>{p}</option>
+                            ))}
+                        </select>
+                    </label>
+
                 </label>
 
 

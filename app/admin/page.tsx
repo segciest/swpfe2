@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil } from 'lucide-react';
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<'listings' | 'reports' | 'subscriptions'>('listings');
+    const [activeTab, setActiveTab] = useState<'listings' | 'reports' | 'subscriptions' | 'users'>('listings');
     const [listings, setListings] = useState<any[]>([]);
     const [reports, setReports] = useState<any[]>([]);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [selected, setSelected] = useState<any | null>(null);
+    const [users, setUsers] = useState<any[]>([]);
+
     const router = useRouter();
     // Lấy role từ localStorage
     const stored = typeof window !== 'undefined' ? localStorage.getItem('userData') : null;
@@ -78,11 +80,32 @@ export default function AdminDashboard() {
         }
     };
 
+    // 👤 Lấy danh sách người dùng
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch("http://localhost:8080/api/users/list", {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            // const res = await fetch("https://mocki.io/v1/00b22952-75d7-465d-b542-0a1a85d5f761", {
+            //     headers: { Authorization: `Bearer ${getToken()}` },
+            // });
+            if (!res.ok) throw new Error(await res.text());
+            setUsers(await res.json());
+        } catch (err: any) {
+            alert(err.message || "Không tải được danh sách người dùng!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     // Tự động tải dữ liệu theo tab
     useEffect(() => {
         if (activeTab === 'listings') fetchListings();
         else if (activeTab === 'reports') fetchReports();
         else if (activeTab === 'subscriptions') fetchSubscriptions();
+        else if (activeTab === 'users') fetchUsers();
     }, [activeTab]);
 
     // ✅ Duyệt bài
@@ -133,6 +156,23 @@ export default function AdminDashboard() {
         }
     };
 
+    // 🚫 Ban user
+    const handleBanUser = async (id: string) => {
+        if (!confirm("Bạn có chắc muốn BAN user này?")) return;
+        try {
+            const res = await fetch(`http://localhost:8080/api/users/ban/${id}`, {
+                method: "PUT",
+                headers: { Authorization: `Bearer ${getToken()}` }
+            });
+            if (!res.ok) throw new Error(await res.text());
+            alert("🚫 User đã bị BAN!");
+            fetchUsers();
+        } catch (err: any) {
+            alert(err.message || "Không thể ban user!");
+        }
+    };
+
+
     return (
         <div className="min-h-screen bg-gray-100 flex">
             {/* Sidebar */}
@@ -143,6 +183,7 @@ export default function AdminDashboard() {
                         { key: 'listings', label: 'Duyệt bài đăng' },
                         { key: 'reports', label: 'Duyệt báo cáo' },
                         { key: 'subscriptions', label: 'Quản lý gói đăng ký' },
+                        { key: 'users', label: 'Quản lý người dùng' }   // 👈 Thêm tab mới
                     ].map(({ key, label }) => (
                         <button
                             key={key}
@@ -154,6 +195,7 @@ export default function AdminDashboard() {
                         </button>
                     ))}
                 </nav>
+
             </aside>
 
             {/* Main content */}
@@ -266,6 +308,91 @@ export default function AdminDashboard() {
                         )}
                     </>
                 )}
+
+                {/* --- QUẢN LÝ NGƯỜI DÙNG --- */}
+                {activeTab === 'users' && (
+                    <>
+                        <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý người dùng</h1>
+
+                        {loading ? (
+                            <div className="flex justify-center items-center h-64">
+                                <Loader2 className="animate-spin w-8 h-8 text-gray-500" />
+                            </div>
+                        ) : users.length === 0 ? (
+                            <p className="text-gray-600 text-center mt-20">Không có người dùng nào.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {users.map((u) => (
+                                    <div key={u.userID} className="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
+
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <img
+                                                src={u.avatarUrl || "/default-avatar.png"}
+                                                className="w-14 h-14 rounded-full object-cover border"
+                                                alt="avatar"
+                                            />
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-gray-800">
+                                                    {u.userName || "Không tên"}
+                                                </h3>
+                                                <p className="text-sm text-gray-600">{u.userEmail}</p>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-sm text-gray-700 mb-1">
+                                            <strong>Role:</strong> {u.role?.roleName}
+                                        </p>
+
+                                        <p className="text-sm text-gray-700 mb-1">
+                                            <strong>Phone:</strong> {u.phone || "Không có"}
+                                        </p>
+
+                                        <p className="text-sm text-gray-700 mb-1">
+                                            <strong>Gói đăng ký:</strong> {u.subid?.subName || "Free/None"}
+                                        </p>
+
+                                        <p className="text-sm text-gray-700 mb-1">
+                                            <strong>Trạng thái:</strong>
+                                            <span
+                                                className={
+                                                    u.userStatus === "BANNED"
+                                                        ? "text-red-600 font-semibold"
+                                                        : "text-green-600 font-semibold"
+                                                }
+                                            >
+                                                {u.userStatus}
+                                            </span>
+                                        </p>
+
+                                        <div className="flex justify-end gap-2 mt-4">
+                                            {/* 👁 Xem hồ sơ */}
+                                            <button
+                                                onClick={() => router.push(`/userprofile/${u.userID}`)}
+                                                className="flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md"
+                                            >
+                                                <Eye size={16} /> Profile
+                                            </button>
+
+                                            {/* 🔨 Ban user */}
+                                            {u.userStatus !== "BANNED" && (
+                                                <button
+                                                    onClick={() => handleBanUser(u.userID)}
+                                                    className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
+                                                >
+                                                    <XCircle size={16} /> Ban
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+
+                            </div>
+                        )}
+                    </>
+                )}
+
+
+
 
                 {/* --- QUẢN LÝ GÓI ĐĂNG KÝ --- */}
                 {activeTab === 'subscriptions' && (
