@@ -12,6 +12,15 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(false);
     const [selected, setSelected] = useState<any | null>(null);
     const [users, setUsers] = useState<any[]>([]);
+    const [editForm, setEditForm] = useState({
+        subName: "",
+        subDetails: "",
+        subPrice: "",
+        duration: 0,
+        priorityLevel: 0,
+        status: "ACTIVE"
+    });
+
 
     const router = useRouter();
     // Lấy role từ localStorage
@@ -169,6 +178,32 @@ export default function AdminDashboard() {
             fetchUsers();
         } catch (err: any) {
             alert(err.message || "Không thể ban user!");
+        }
+    };
+
+
+    // 💾 Cập nhật gói đăng ký
+    const handleUpdateSubscription = async () => {
+        try {
+            const res = await fetch(
+                `http://localhost:8080/api/subscription/updateSub/${selected.subId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify(editForm)
+                }
+            );
+
+            if (!res.ok) throw new Error(await res.text());
+
+            alert("✔ Cập nhật gói đăng ký thành công!");
+            setSelected(null);
+            fetchSubscriptions();
+        } catch (err: any) {
+            alert(err.message || "Không thể cập nhật gói đăng ký!");
         }
     };
 
@@ -395,41 +430,111 @@ export default function AdminDashboard() {
 
 
                 {/* --- QUẢN LÝ GÓI ĐĂNG KÝ --- */}
-                {activeTab === 'subscriptions' && (
-                    <>
-                        <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý gói đăng ký</h1>
-                        {loading ? (
-                            <div className="flex justify-center items-center h-64">
-                                <Loader2 className="animate-spin w-8 h-8 text-gray-500" />
+                {selected && activeTab === 'subscriptions' && (
+                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                        <div className="bg-white w-[500px] rounded-xl p-6 relative shadow-lg">
+                            <button
+                                onClick={() => setSelected(null)}
+                                className="absolute top-3 right-4 text-gray-600 hover:text-black"
+                            >
+                                ✕
+                            </button>
+
+                            <h2 className="text-xl font-bold mb-4">
+                                Chỉnh sửa gói: {selected.subName}
+                            </h2>
+
+                            <div className="space-y-4">
+
+                                <div>
+                                    <label className="font-medium">Tên gói</label>
+                                    <input
+                                        className="w-full p-2 border rounded"
+                                        value={editForm.subName}
+                                        onChange={(e) =>
+                                            setEditForm({ ...editForm, subName: e.target.value })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="font-medium">Chi tiết</label>
+                                    <textarea
+                                        className="w-full p-2 border rounded"
+                                        value={editForm.subDetails}
+                                        onChange={(e) =>
+                                            setEditForm({ ...editForm, subDetails: e.target.value })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="font-medium">Giá (VNĐ)</label>
+                                    <input
+                                        className="w-full p-2 border rounded"
+                                        type="text"
+                                        value={editForm.subPrice}
+                                        onChange={(e) =>
+                                            setEditForm({ ...editForm, subPrice: e.target.value })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="font-medium">Thời hạn (ngày)</label>
+                                    <input
+                                        className="w-full p-2 border rounded"
+                                        type="number"
+                                        value={editForm.duration}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                duration: Number(e.target.value),
+                                            })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="font-medium">Mức ưu tiên</label>
+                                    <input
+                                        className="w-full p-2 border rounded"
+                                        type="number"
+                                        value={editForm.priorityLevel}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                priorityLevel: Number(e.target.value),
+                                            })
+                                        }
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="font-medium">Trạng thái</label>
+                                    <select
+                                        className="w-full p-2 border rounded"
+                                        value={editForm.status}
+                                        onChange={(e) =>
+                                            setEditForm({ ...editForm, status: e.target.value })
+                                        }
+                                    >
+                                        <option value="ACTIVE">ACTIVE</option>
+                                        <option value="INACTIVE">INACTIVE</option>
+                                    </select>
+                                </div>
                             </div>
-                        ) : subscriptions.length === 0 ? (
-                            <p className="text-gray-600 text-center mt-20">Không có gói đăng ký nào.</p>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {subscriptions.map((sub) => (
-                                    <div key={sub.subId} className="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition flex flex-col justify-between">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-gray-800 mb-1">{sub.subName}</h3>
-                                            <p className="text-sm text-gray-600 mb-2">{sub.subDetails}</p>
-                                            <p className="text-yellow-700 font-semibold">Giá: {Number(sub.subPrice).toLocaleString()} VNĐ</p>
-                                            <p className="text-sm text-gray-600">Thời hạn: {sub.duration} ngày</p>
-                                            <p className="text-sm text-gray-600">Mức ưu tiên: {sub.priorityLevel}</p>
-                                            <p className={`text-sm font-medium mt-2 ${sub.status === 'ACTIVE' ? 'text-green-600' : 'text-red-500'}`}>
-                                                {sub.status}
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => setSelected(sub)}
-                                            className="mt-4 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md"
-                                        >
-                                            <Pencil size={16} /> Edit
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </>
+
+                            <button
+                                onClick={handleUpdateSubscription}
+                                className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md"
+                            >
+                                Lưu thay đổi
+                            </button>
+                        </div>
+                    </div>
                 )}
+
             </main>
 
             {/* --- Modal chi tiết bài đăng --- */}
