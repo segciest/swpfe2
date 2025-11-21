@@ -59,6 +59,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   };
 
   // 🚩 Gửi report
+  // 🚩 Gửi report
   const handleSubmitReport = async () => {
     const userData = localStorage.getItem("userData");
     if (!userData) {
@@ -73,17 +74,23 @@ export default function ListingCard({ listing }: { listing: Listing }) {
     }
 
     setLoading(true);
+
     try {
       const formData = new FormData();
       formData.append("listingId", listing.listingId);
       formData.append("reason", reportReason.trim());
-      reportFiles.forEach((file, index) => {
+
+      // Gửi đúng chuẩn nhiều file với key "file"
+      reportFiles.forEach((file) => {
         formData.append("file", file);
       });
 
       const res = await fetch("http://localhost:8080/api/report/create", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`
+          // ❌ KHÔNG thêm Content-Type
+        },
         body: formData,
       });
 
@@ -96,7 +103,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       setShowReportModal(false);
       setReportReason("");
       setReportFiles([]);
-      alert("✅ Báo cáo thành công! Quản trị viên sẽ xem xét bài đăng này.");
+      alert("✅ Báo cáo thành công! Quản trị viên sẽ xem xét bài đăng.");
     } catch (err) {
       console.error("Lỗi khi gửi báo cáo:", err);
       alert("❌ Gửi báo cáo thất bại, vui lòng thử lại!");
@@ -104,6 +111,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       setLoading(false);
     }
   };
+
 
   return (
     <>
@@ -214,6 +222,7 @@ export default function ListingCard({ listing }: { listing: Listing }) {
                   }}
                   className="w-full text-sm"
                 />
+
               </div>
 
               <div className="flex justify-end gap-3 mt-4">
