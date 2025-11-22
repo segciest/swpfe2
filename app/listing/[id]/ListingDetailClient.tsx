@@ -70,7 +70,7 @@ export default function ListingDetailClient({ data }: { data: any }) {
                         {data.cycleCount && <p><strong>Chu kỳ sạc:</strong> {data.cycleCount}</p>}
                         {data.voltage && <p><strong>Điện áp:</strong> {data.voltage}</p>}
                         {data.capacity && <p><strong>Công suất:</strong> {data.capacity}</p>}
-                        {data.warrantyInfo && <p><strong>Bảo hành:</strong> {data.warrantyInfo}</p>}
+                        {data.warrantyInfo && <p><strong>Bảo hành:</strong> {data.warrantyInfo} Tháng</p>}
                         {data.batteryLifeRemaining && (
                             <p><strong>Tuổi thọ pin còn lại:</strong> {data.batteryLifeRemaining}</p>
                         )}
