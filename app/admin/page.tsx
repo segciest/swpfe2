@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil, User } from 'lucide-react';
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<'listings' | 'reports' | 'subscriptions' | 'users' | 'all_listings'>('listings');
@@ -268,6 +268,26 @@ export default function AdminDashboard() {
             alert(err.message || "Không thể ban user!");
         }
     };
+
+    // 🔓 Unban user
+    const handleUnbanUser = async (id: string) => {
+        if (!confirm("Bạn có chắc muốn mở khóa (UNBAN) user này?")) return;
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/users/active/${id}`, {
+                method: "PUT",
+                headers: { Authorization: `Bearer ${getToken()}` }
+            });
+
+            if (!res.ok) throw new Error(await res.text());
+
+            alert("🔓 User đã được UNBAN!");
+            fetchUsers();
+        } catch (err: any) {
+            alert(err.message || "Không thể unban user!");
+        }
+    };
+
 
 
     // 💾 Cập nhật gói đăng ký
@@ -574,11 +594,9 @@ export default function AdminDashboard() {
                                     <div key={u.userID} className="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
 
                                         <div className="flex items-center gap-3 mb-3">
-                                            <img
-                                                src={u.avatarUrl || "/default-avatar.png"}
-                                                className="w-14 h-14 rounded-full object-cover border"
-                                                alt="avatar"
-                                            />
+                                            <div className="w-14 h-14 rounded-full bg-gray-200 border flex items-center justify-center">
+                                                <User className="w-8 h-8 text-gray-500" />
+                                            </div>
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-800">
                                                     {u.userName || "Không tên"}
@@ -628,6 +646,15 @@ export default function AdminDashboard() {
                                                     className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
                                                 >
                                                     <XCircle size={16} /> Ban
+                                                </button>
+                                            )}
+                                            {/* ✔ Unban user */}
+                                            {u.userStatus === "BANNED" && (
+                                                <button
+                                                    onClick={() => handleUnbanUser(u.userID)}
+                                                    className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
+                                                >
+                                                    ✔ Unban
                                                 </button>
                                             )}
                                         </div>
