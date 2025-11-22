@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     const fetchReports = async () => {
         try {
             setLoading(true);
-            const res = await fetch('http://localhost:8080/api/report', {
+            const res = await fetch('http://localhost:8080/api/report/pending', {
                 headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (!res.ok) throw new Error(await res.text());
@@ -498,6 +498,54 @@ export default function AdminDashboard() {
 
 
                 {/* --- QUẢN LÝ GÓI ĐĂNG KÝ --- */}
+                {activeTab === 'subscriptions' && (
+                    <>
+                        <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý gói đăng ký</h1>
+                        {loading ? (
+                            <div className="flex justify-center items-center h-64">
+                                <Loader2 className="animate-spin w-8 h-8 text-gray-500" />
+                            </div>
+                        ) : subscriptions.length === 0 ? (
+                            <p className="text-gray-600 text-center mt-20">Không có gói đăng ký nào.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {subscriptions.map((s) => (
+                                    <div key={s.subId} className="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
+                                        <h3 className="text-lg font-semibold text-gray-800">{s.subName}</h3>
+                                        <p className="text-sm text-gray-600 mb-2">Giá: {Number(s.subPrice).toLocaleString()} VNĐ</p>
+                                        <p className="text-sm text-gray-600 mb-2">Thời hạn: {s.duration} ngày</p>
+                                        <p className="text-sm text-gray-600 mb-2">Ưu tiên: {s.priorityLevel}</p>
+                                        <p className="text-sm text-gray-500 line-clamp-3 mb-3">{s.subDetails}</p>
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => { setSelected(s); setEditForm({ subName: s.subName || '', subDetails: s.subDetails || '', subPrice: String(s.subPrice || ''), duration: s.duration || 0, priorityLevel: s.priorityLevel || 0, status: s.status || 'ACTIVE' }); }}
+                                                className="flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md"
+                                            >
+                                                <Pencil size={14} /> Chỉnh sửa
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (!confirm('Bạn có chắc muốn xóa gói này?')) return;
+                                                    fetch(`http://localhost:8080/api/subscription/${s.subId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } })
+                                                        .then(async (res) => {
+                                                            if (!res.ok) throw new Error(await res.text());
+                                                            alert('Xóa thành công');
+                                                            fetchSubscriptions();
+                                                        })
+                                                        .catch((err) => alert(err.message || 'Không thể xóa gói'));
+                                                }}
+                                                className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
+                                            >
+                                                <XCircle size={14} /> Xóa
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+
                 {selected && activeTab === 'subscriptions' && (
                     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                         <div className="bg-white w-[500px] rounded-xl p-6 relative shadow-lg">
@@ -645,28 +693,7 @@ export default function AdminDashboard() {
             )}
 
 
-            {/* --- Modal chỉnh sửa gói đăng ký --- */}
-            {selected && activeTab === 'subscriptions' && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white w-[500px] rounded-xl p-6 relative shadow-lg">
-                        <button onClick={() => setSelected(null)} className="absolute top-3 right-4 text-gray-600 hover:text-black">✕</button>
-                        <h2 className="text-xl font-bold mb-4">Chỉnh sửa gói: {selected.subName}</h2>
-                        <div className="space-y-3 text-sm">
-                            <p><strong>ID:</strong> {selected.subId}</p>
-                            <p><strong>Chi tiết:</strong> {selected.subDetails}</p>
-                            <p><strong>Giá:</strong> {Number(selected.subPrice).toLocaleString()} VNĐ</p>
-                            <p><strong>Thời hạn:</strong> {selected.duration} ngày</p>
-                            <p><strong>Trạng thái:</strong> {selected.status}</p>
-                        </div>
-                        <button
-                            onClick={() => alert('👉 Chức năng chỉnh sửa sẽ được thêm sau.')}
-                            className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-md"
-                        >
-                            Lưu thay đổi
-                        </button>
-                    </div>
-                </div>
-            )}
+            {/* single edit modal for subscriptions is above; removed duplicate info modal */}
         </div>
     );
 }
