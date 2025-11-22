@@ -109,7 +109,7 @@ export default function ListingDetailClient({ data }: { data: any }) {
                     </div>
 
                     {/* Thông tin người bán */}
-                    {data.seller && (
+                    {data.sellerName && (
                         <div className="flex items-center justify-between border-t pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-yellow-300 flex items-center justify-center font-bold text-gray-700">
