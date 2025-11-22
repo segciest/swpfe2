@@ -18,6 +18,7 @@ type Plan = {
   icon: any;
   buttonText: string;
   isPopular?: boolean;
+  priorityLevel?: number;
   accentColor?: string;
   borderColor?: string;
   buttonClasses?: string;
@@ -76,7 +77,8 @@ export default function PricingPage() {
               features,
               icon: icons[idx % icons.length] || Package,
               buttonText: `Mua Ngay ${s.subName || ''}`,
-              isPopular: !!s.priorityLevel,
+              isPopular: Number(s.priorityLevel || 0) > 0,
+              priorityLevel: Number(s.priorityLevel || 0),
               accentColor: idx === 1 ? 'text-yellow-500' : idx === 2 ? 'text-blue-500' : 'text-pink-500',
               borderColor: idx === 1 ? 'border-yellow-500' : idx === 2 ? 'border-blue-500' : 'border-pink-500',
               buttonClasses: idx === 1 ? 'bg-yellow-500 hover:bg-yellow-600 text-gray-900' : idx === 2 ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-pink-600 hover:bg-pink-700 text-white',
@@ -138,6 +140,19 @@ export default function PricingPage() {
     }
   };
 
+  // determine popular index from plans' priorityLevel (highest wins), fallback to center
+  // Prefer any plan explicitly marked with priorityLevel === 3 as "most popular".
+  // Otherwise fall back to the highest priorityLevel, then center card.
+  let popularIndex = -1;
+  if (plans.length) {
+    const idx3 = plans.findIndex((p) => Number(p.priorityLevel || 0) === 3);
+    if (idx3 >= 0) {
+      popularIndex = idx3;
+    } else {
+      popularIndex = plans.reduce((bestIdx, p, i) => (Number(p.priorityLevel || 0) > (Number(plans[bestIdx].priorityLevel || 0)) ? i : bestIdx), 0);
+    }
+  }
+
   return (
     <div className="bg-white min-h-screen">
       {/* Banner chuyên dụng cho trang Subscription */}
@@ -172,7 +187,7 @@ export default function PricingPage() {
               }
             >
               {/* Show 'Phổ biến nhất' only on the center card */}
-              {idx === Math.floor(plans.length/2) && (
+              {((popularIndex >= 0 && idx === popularIndex) || (popularIndex < 0 && idx === Math.floor(plans.length/2))) && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
                   <span className="bg-yellow-500 text-gray-900 text-sm font-bold px-6 py-2 rounded-full uppercase shadow-lg">
                     Phổ biến nhất
