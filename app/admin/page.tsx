@@ -295,21 +295,22 @@ export default function AdminDashboard() {
         }
     };
 
-    // 🚫 Ban user
-    const handleBanUser = async (id: string) => {
-        if (!confirm("Bạn có chắc muốn BAN user này?")) return;
+    // 🚫 Unban-Ban user
+    const updateUserStatus = async (id: string, status: 'BANNED' | 'ACTIVE') => {
+        if (!confirm(`Bạn có chắc muốn đổi trạng thái user này thành ${status}?`)) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/users/ban/${id}`, {
+            const res = await fetch(`http://localhost:8080/api/users/status/${id}?status=${status}`, {
                 method: "PUT",
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
             if (!res.ok) throw new Error(await res.text());
-            alert("🚫 User đã bị BAN!");
+            alert(`✅ Trạng thái user đã được cập nhật: ${status}`);
             fetchUsers();
         } catch (err: any) {
-            alert(err.message || "Không thể ban user!");
+            alert(err.message || "Không thể cập nhật trạng thái user!");
         }
     };
+
 
 
     // 💾 Cập nhật gói đăng ký
@@ -341,7 +342,7 @@ export default function AdminDashboard() {
     const hideListing = async (id: string) => {
         if (!confirm("Ẩn bài đăng này?")) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/hide/${id}`, {
+            const res = await fetch(`http://localhost:8080/api/listing/status/${id}?status=HIDDEN`, {
                 method: "PUT",
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
@@ -353,11 +354,12 @@ export default function AdminDashboard() {
         }
     };
 
+
     // 👁️ Hiện lại bài đăng
     const showListing = async (id: string) => {
         if (!confirm("Hiện lại bài đăng này?")) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/show/${id}`, {
+            const res = await fetch(`http://localhost:8080/api/listing/status/${id}?status=ACTIVE`, {
                 method: "PUT",
                 headers: { Authorization: `Bearer ${getToken()}` }
             });
@@ -368,6 +370,7 @@ export default function AdminDashboard() {
             alert(err.message);
         }
     };
+
 
 
 
@@ -673,14 +676,23 @@ export default function AdminDashboard() {
                                             </button>
 
                                             {/* 🔨 Ban user */}
-                                            {u.userStatus !== "BANNED" && (
+                                            {/* 🔨 Ban / Unban user */}
+                                            {u.userStatus === "ACTIVE" ? (
                                                 <button
-                                                    onClick={() => handleBanUser(u.userID)}
+                                                    onClick={() => updateUserStatus(u.userID, 'BANNED')}
                                                     className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
                                                 >
                                                     <XCircle size={16} /> Ban
                                                 </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => updateUserStatus(u.userID, 'ACTIVE')}
+                                                    className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
+                                                >
+                                                    <CheckCircle size={16} /> Unban
+                                                </button>
                                             )}
+
                                         </div>
                                     </div>
                                 ))}
