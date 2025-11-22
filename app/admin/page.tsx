@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil, User } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil } from 'lucide-react';
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<'listings' | 'reports' | 'subscriptions' | 'users' | 'all_listings'>('listings');
@@ -38,7 +38,14 @@ export default function AdminDashboard() {
         status: "ACTIVE"
     });
 
+    // search all listing for admim
     const [allListings, setAllListings] = useState<any[]>([]);
+    const [searchTitle, setSearchTitle] = useState('');
+    const [searchPage, setSearchPage] = useState(0);
+
+    // search user by username
+    const [userSearch, setUserSearch] = useState('');
+
 
 
     const router = useRouter();
@@ -126,6 +133,23 @@ export default function AdminDashboard() {
             setLoading(false);
         }
     };
+    // 🔍 Tìm kiếm người dùng theo tên
+    const fetchUsersByName = async (name: string) => {
+        try {
+            setLoading(true);
+            const res = await fetch(`http://localhost:8080/api/users/name?userName=${encodeURIComponent(name)}`, {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            setUsers(data);
+        } catch (err: any) {
+            alert(err.message || "Không thể tìm kiếm người dùng!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // 📋 Lấy tất cả bài đăng
     const fetchAllListings = async () => {
@@ -142,6 +166,24 @@ export default function AdminDashboard() {
             setLoading(false);
         }
     };
+
+    // 🔍 Tìm kiếm bài đăng theo tiêu đề
+    const fetchListingsByTitle = async (title: string, page = 0) => {
+        try {
+            setLoading(true);
+            const res = await fetch(`http://localhost:8080/api/listing/search/title?title=${encodeURIComponent(title)}&page=${page}&size=20`, {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            setAllListings(data);
+        } catch (err: any) {
+            alert(err.message || "Không thể tìm kiếm bài đăng!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
     // Tự động tải dữ liệu theo tab
@@ -269,26 +311,6 @@ export default function AdminDashboard() {
         }
     };
 
-    // 🔓 Unban user
-    const handleUnbanUser = async (id: string) => {
-        if (!confirm("Bạn có chắc muốn mở khóa (UNBAN) user này?")) return;
-
-        try {
-            const res = await fetch(`http://localhost:8080/api/users/active/${id}`, {
-                method: "PUT",
-                headers: { Authorization: `Bearer ${getToken()}` }
-            });
-
-            if (!res.ok) throw new Error(await res.text());
-
-            alert("🔓 User đã được UNBAN!");
-            fetchUsers();
-        } catch (err: any) {
-            alert(err.message || "Không thể unban user!");
-        }
-    };
-
-
 
     // 💾 Cập nhật gói đăng ký
     const handleUpdateSubscription = async () => {
@@ -317,49 +339,35 @@ export default function AdminDashboard() {
 
     // 🙈 Ẩn bài đăng
     const hideListing = async (id: string) => {
-        if (!confirm("Bạn có chắc muốn ẨN bài đăng này?")) return;
-
+        if (!confirm("Ẩn bài đăng này?")) return;
         try {
-            const res = await fetch(
-                `http://localhost:8080/api/listing/status/${id}?status=BANNED`,
-                {
-                    method: "PUT",
-                    headers: { Authorization: `Bearer ${getToken()}` }
-                }
-            );
-
+            const res = await fetch(`http://localhost:8080/api/listing/hide/${id}`, {
+                method: "PUT",
+                headers: { Authorization: `Bearer ${getToken()}` }
+            });
             if (!res.ok) throw new Error(await res.text());
-            alert("Đã ẨN bài đăng!");
-
+            alert("Đã ẩn bài đăng!");
             fetchAllListings();
         } catch (err: any) {
-            alert(err.message || "Không thể ẩn bài đăng!");
+            alert(err.message);
         }
     };
-
 
     // 👁️ Hiện lại bài đăng
     const showListing = async (id: string) => {
-        if (!confirm("Bạn có chắc muốn HIỆN lại bài đăng này?")) return;
-
+        if (!confirm("Hiện lại bài đăng này?")) return;
         try {
-            const res = await fetch(
-                `http://localhost:8080/api/listing/status/${id}?status=ACTIVE`,
-                {
-                    method: "PUT",
-                    headers: { Authorization: `Bearer ${getToken()}` }
-                }
-            );
-
+            const res = await fetch(`http://localhost:8080/api/listing/show/${id}`, {
+                method: "PUT",
+                headers: { Authorization: `Bearer ${getToken()}` }
+            });
             if (!res.ok) throw new Error(await res.text());
-            alert("Đã HIỆN bài đăng trở lại!");
-
+            alert("Đã kích hoạt lại bài đăng!");
             fetchAllListings();
         } catch (err: any) {
-            alert(err.message || "Không thể hiện bài đăng!");
+            alert(err.message);
         }
     };
-
 
 
 
@@ -581,6 +589,29 @@ export default function AdminDashboard() {
                 {activeTab === 'users' && (
                     <>
                         <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý người dùng</h1>
+                        <div className="mb-4 flex gap-2">
+                            <input
+                                type="text"
+                                value={userSearch}
+                                onChange={(e) => setUserSearch(e.target.value)}
+                                placeholder="Tìm theo tên người dùng..."
+                                className="border border-gray-300 rounded-md px-3 py-2 flex-1"
+                                onKeyDown={(e) => e.key === 'Enter' && fetchUsersByName(userSearch)}
+                            />
+                            <button
+                                onClick={() => fetchUsersByName(userSearch)}
+                                className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
+                            >
+                                Tìm
+                            </button>
+                            <button
+                                onClick={() => { setUserSearch(''); fetchUsers(); }}
+                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                            >
+                                Reset
+                            </button>
+                        </div>
+
 
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
@@ -594,9 +625,11 @@ export default function AdminDashboard() {
                                     <div key={u.userID} className="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
 
                                         <div className="flex items-center gap-3 mb-3">
-                                            <div className="w-14 h-14 rounded-full bg-gray-200 border flex items-center justify-center">
-                                                <User className="w-8 h-8 text-gray-500" />
-                                            </div>
+                                            <img
+                                                src={u.avatarUrl || "/default-avatar.png"}
+                                                className="w-14 h-14 rounded-full object-cover border"
+                                                alt="avatar"
+                                            />
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-800">
                                                     {u.userName || "Không tên"}
@@ -646,15 +679,6 @@ export default function AdminDashboard() {
                                                     className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
                                                 >
                                                     <XCircle size={16} /> Ban
-                                                </button>
-                                            )}
-                                            {/* ✔ Unban user */}
-                                            {u.userStatus === "BANNED" && (
-                                                <button
-                                                    onClick={() => handleUnbanUser(u.userID)}
-                                                    className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
-                                                >
-                                                    ✔ Unban
                                                 </button>
                                             )}
                                         </div>
@@ -724,10 +748,34 @@ export default function AdminDashboard() {
                 )}
 
 
-                {/* --- QUẢN LÝ BÀI ĐĂNG --- */}
+                {/* --- QUẢN LÍ BÀI ĐĂNG --- */}
                 {activeTab === 'all_listings' && (
                     <>
                         <h1 className="text-2xl font-bold mb-6 text-gray-800">Tất cả bài đăng</h1>
+
+                        <div className="mb-4 flex gap-2">
+                            <input
+                                type="text"
+                                value={searchTitle}
+                                onChange={(e) => setSearchTitle(e.target.value)}
+                                placeholder="Tìm theo tiêu đề..."
+                                className="border border-gray-300 rounded-md px-3 py-2 flex-1"
+                                onKeyDown={(e) => e.key === 'Enter' && fetchListingsByTitle(searchTitle)}
+                            />
+                            <button
+                                onClick={() => fetchListingsByTitle(searchTitle)}
+                                className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
+                            >
+                                Tìm
+                            </button>
+                            <button
+                                onClick={() => { setSearchTitle(''); fetchAllListings(); }}
+                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                            >
+                                Reset
+                            </button>
+                        </div>
+
 
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
@@ -779,7 +827,6 @@ export default function AdminDashboard() {
                                                             Hiện
                                                         </button>
                                                     )}
-
                                                 </div>
                                             </div>
                                         </div>
@@ -791,6 +838,8 @@ export default function AdminDashboard() {
                 )}
 
 
+
+                {/* --- Modal chỉnh sửa gói đăng ký --- */}
                 {selected && activeTab === 'subscriptions' && (
                     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                         <div className="bg-white w-[500px] rounded-xl p-6 relative shadow-lg">

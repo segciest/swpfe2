@@ -113,7 +113,7 @@ export default function ListingDetailClient({ data }: { data: any }) {
                         <div className="flex items-center justify-between border-t pt-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-yellow-300 flex items-center justify-center font-bold text-gray-700">
-                                    {data.seller.userName[0]}
+                                    {data.sellerName}
                                 </div>
                                 <div>
                                     <p className="font-medium">{data.sellerName}</p>
