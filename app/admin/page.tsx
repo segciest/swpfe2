@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil, User as UserIcon } from 'lucide-react';
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<'listings' | 'reports' | 'subscriptions' | 'users' | 'all_listings'>('listings');
@@ -628,11 +628,12 @@ export default function AdminDashboard() {
                                     <div key={u.userID} className="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
 
                                         <div className="flex items-center gap-3 mb-3">
-                                            <img
+                                            {/* <img
                                                 src={u.avatarUrl || "/default-avatar.png"}
                                                 className="w-14 h-14 rounded-full object-cover border"
                                                 alt="avatar"
-                                            />
+                                            /> */}
+                                            <UserIcon className="w-8 h-8 text-gray-500" />
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-800">
                                                     {u.userName || "Không tên"}
