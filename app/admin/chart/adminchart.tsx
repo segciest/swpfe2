@@ -38,7 +38,7 @@ export default function AdminChart() {
     const router = useRouter();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [chartData, setChartData] = useState<any[]>([]);
-    const [timeFilter, setTimeFilter] = useState<'7 Ngày' | '30 Ngày' | 'Theo Quý' | 'Tùy Chỉnh'>('30 Ngày');
+    const [timeFilter, setTimeFilter] = useState<'7 Ngày' | '30 Ngày' | 'Tùy Chỉnh'>('30 Ngày');
     const [activeTab, setActiveTab] = useState<'report' | 'analysis'>('report');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -109,7 +109,7 @@ export default function AdminChart() {
                 setRevenueGrowthData(revenueGrowth.revenue ?? revenueGrowth ?? {});
 
                 setSubscriptionGrowthData(subscriptionGrowth.subscriptions || {});
-                
+
                 // Set quarterly data từ API
                 setQuarterlyData(quarterlyDataResponse.quarters || []);
 
@@ -166,12 +166,12 @@ export default function AdminChart() {
             alert('Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc!');
             return;
         }
-        
+
         try {
             const storedUserData = localStorage.getItem('userData');
             if (!storedUserData) return;
             const { token } = JSON.parse(storedUserData);
-            
+
             const response = await fetch(
                 `http://localhost:8080/api/admin/dashboard/custom-range?startDate=${customStartDate}&endDate=${customEndDate}`,
                 {
@@ -181,7 +181,7 @@ export default function AdminChart() {
                     }
                 }
             );
-            
+
             if (response.ok) {
                 const customData = await response.json();
                 setChartData(customData.chartData || []);
@@ -204,17 +204,19 @@ export default function AdminChart() {
             revenueArray = revenueGrowthData.weekly || [];
         } else if (timeFilter === '30 Ngày') {
             revenueArray = revenueGrowthData.monthly || [];
-        } else if (timeFilter === 'Theo Quý') {
-            // Sử dụng quarterly data thật từ API
-            const quarterData = quarterlyData.map((quarter: any) => ({
-                name: `Q${quarter.quarter}`,
-                "Doanh thu": quarter.revenue || 0,
-                quarter: quarter.quarter,
-                year: quarter.year
-            }));
-            setChartData(quarterData);
-            return;
-        } else if (timeFilter === 'Tùy Chỉnh') {
+        }
+        // else if (timeFilter === 'Theo Quý') {
+        //     // Sử dụng quarterly data thật từ API
+        //     const quarterData = quarterlyData.map((quarter: any) => ({
+        //         name: `Q${quarter.quarter}`,
+        //         "Doanh thu": quarter.revenue || 0,
+        //         quarter: quarter.quarter,
+        //         year: quarter.year
+        //     }));
+        //     setChartData(quarterData);
+        //     return;
+        // } 
+        else if (timeFilter === 'Tùy Chỉnh') {
             setShowCustomDatePicker(true);
             return;
         }
@@ -292,7 +294,7 @@ export default function AdminChart() {
                     <>
                         {/* BỘ LỌC THỜI GIAN */}
                         <div className="flex flex-wrap gap-2 mb-6">
-                            {(['7 Ngày', '30 Ngày', 'Theo Quý', 'Tùy Chỉnh'] as const).map(filter => (
+                            {(['7 Ngày', '30 Ngày', 'Tùy Chỉnh'] as const).map(filter => (
                                 <button
                                     key={filter}
                                     onClick={() => {
@@ -346,7 +348,7 @@ export default function AdminChart() {
                         )}
 
                         {/* THỐNG KÊ THEO QUÝ THẬT */}
-                        {timeFilter === 'Theo Quý' && quarterlyData.length > 0 && (
+                        {/* {timeFilter === 'Theo Quý' && quarterlyData.length > 0 && (
                             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg shadow-sm mb-8">
                                 <h3 className="text-lg font-semibold text-gray-700 mb-4">📅 Thống Kê Theo Quý ({new Date().getFullYear()})</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -386,7 +388,7 @@ export default function AdminChart() {
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        )} */}
 
                         {/* THẺ THỐNG KÊ - Tổng quan */}
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">📊 Thống Kê Tổng Quan</h3>
