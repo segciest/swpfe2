@@ -247,8 +247,8 @@ export default function ProfilePage() {
 
                 {/* --- XÁC THỰC EMAIL --- */}
                 <div className="mt-6 text-sm text-gray-600 flex flex-col items-center gap-3 w-full">
-                    {profile.verifiedCode ? (
-                        // ✅ Nếu đã xác thực
+                    {profile.userStatus === 'ACTIVE' ? (
+                        // ✅ Nếu tài khoản active => email đã xác thực
                         <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
                             <BadgeCheck className="w-4 h-4" />
                             <span>Email đã được xác thực ✅</span>
