@@ -136,13 +136,17 @@ export default function AdminDashboard() {
     // ❌ Từ chối bài
     const handleDeny = async (id: string) => {
         if (!confirm('Bạn có chắc muốn từ chối bài đăng này?')) return;
+
+        const reason = window.prompt('Nhập lý do từ chối (sẽ gửi cho người đăng):', 'Nội dung không phù hợp');
+        if (reason === null) return; // user cancelled
+
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}`, {
+            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}?reason=${encodeURIComponent(reason)}`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (!res.ok) throw new Error(await res.text());
-            alert('❌ Từ chối thành công!');
+            alert('❌ Từ chối thành công! Lý do đã được gửi tới người dùng.');
             fetchListings();
         } catch (err: any) {
             alert(err.message || 'Không thể từ chối!');
@@ -151,15 +155,79 @@ export default function AdminDashboard() {
 
     // ✅ Duyệt / từ chối báo cáo
     const handleReportAction = async (id: number, status: 'RESOLVED' | 'REJECTED') => {
+        // Confirm first
         if (!confirm(`Xác nhận ${status === 'RESOLVED' ? 'duyệt (đã xử lý)' : 'từ chối'} báo cáo này?`)) return;
+
         try {
-            const res = await fetch(
-                `http://localhost:8080/api/report/status/${id}?status=${status}`,
-                { method: 'PUT', headers: { Authorization: `Bearer ${getToken()}` } }
+            const token = getToken();
+
+            if (status === 'REJECTED') {
+                // Keep existing behavior for reject: update report status to REJECTED
+                const res = await fetch(`http://localhost:8080/api/report/status/${id}?status=${status}`, {
+                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error(await res.text());
+                alert('🚫 Báo cáo đã bị từ chối!');
+                fetchReports();
+                return;
+            }
+
+            // For RESOLVED, ask admin which action to perform
+            // Offer three choices: ban listing, ban user, or just resolve
+            const input = window.prompt(
+                'Chọn hành động cho báo cáo:\n1 - Banned listing (khóa bài đăng)\n2 - Banned user (khóa tài khoản người bán)\n3 - Chỉ đánh dấu đã xử lý (Resolve only)\nNhập 1, 2 hoặc 3',
+                '1'
             );
-            if (!res.ok) throw new Error(await res.text());
-            alert(status === 'RESOLVED' ? '✅ Báo cáo đã được xử lý!' : '🚫 Báo cáo đã bị từ chối!');
-            fetchReports();
+            if (!input) return;
+
+            const choice = input.trim();
+            if (choice === '3') {
+                // Just resolve via existing status endpoint
+                const res = await fetch(`http://localhost:8080/api/report/status/${id}?status=RESOLVED`, {
+                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error(await res.text());
+                alert('✅ Báo cáo đã được đánh dấu là đã xử lý (Resolved)');
+                fetchReports();
+                return;
+            }
+
+            // Map choice to actionType expected by backend handleReport endpoint
+            if (choice === '1' || choice === '2') {
+                const actionType = choice === '1' ? 'bannedlisting' : 'banneduser';
+                const handleRes = await fetch(`http://localhost:8080/api/report/handle/${id}?actionType=${encodeURIComponent(actionType)}`, {
+                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!handleRes.ok) throw new Error(await handleRes.text());
+                alert('✅ Báo cáo đã được xử lý: ' + actionType);
+                fetchReports();
+                return;
+            }
+
+            // option 4 (ban both) removed — admins can perform actions separately if needed
+
+            // if user typed the action string directly, accept common variants
+            const lower = choice.toLowerCase();
+            if (lower.includes('ban') && lower.includes('list')) {
+                const handleRes = await fetch(`http://localhost:8080/api/report/handle/${id}?actionType=bannedlisting`, {
+                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!handleRes.ok) throw new Error(await handleRes.text());
+                alert('✅ Báo cáo đã được xử lý: bannedlisting');
+                fetchReports();
+                return;
+            }
+            if (lower.includes('ban') && lower.includes('user')) {
+                const handleRes = await fetch(`http://localhost:8080/api/report/handle/${id}?actionType=banneduser`, {
+                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+                });
+                if (!handleRes.ok) throw new Error(await handleRes.text());
+                alert('✅ Báo cáo đã được xử lý: banneduser');
+                fetchReports();
+                return;
+            }
+
+            alert('Hành động không hợp lệ. Hủy.');
         } catch (err: any) {
             alert(err.message || 'Không thể cập nhật trạng thái báo cáo!');
         }
@@ -263,7 +331,7 @@ export default function AdminDashboard() {
                                                     <Eye size={16} /> Chi tiết
                                                 </button>
                                                 <div className="flex gap-2">
-                                                    {role === 'MODERATOR' && (
+                                                    {role === 'ADMIN' && (
                                                         <button
                                                             onClick={() => handleVerify(item.listingId)}
                                                             className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
@@ -271,7 +339,7 @@ export default function AdminDashboard() {
                                                             <CheckCircle size={16} /> Duyệt
                                                         </button>
                                                     )}
-                                                    {role === 'MODERATOR' && (
+                                                    {role === 'ADMIN' && (
                                                         <button
                                                             onClick={() => handleDeny(item.listingId)}
                                                             className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
