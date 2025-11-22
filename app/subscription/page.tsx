@@ -5,76 +5,27 @@ import { CheckCircle, Package, Star, Gem } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import SubscriptionBanner from '@/components/Banner/SubscriptionBanner';
+import { getSubscriptions } from '@/utils/api';
 
-// Dữ liệu gói (đã thêm 'id' và 'priceValue')
-const pricingPlans = [
-  {
-    id: 2, // <-- ID gói (dùng làm subId)
-    name: 'Basic',
-    price: '50.000đ',
-    priceValue: 50000, // <-- Giá trị số (để gửi đi)
-    description: '30 tin / 7 ngày',
-    features: [
-      '30 tin đăng không giới hạn',
-      'Thời hạn 7 ngày mỗi tin',
-      'Hiển thị thông thường',
-      'Hỗ trợ cơ bản',
-    ],
-    icon: Package,
-    buttonText: 'Mua Ngay Basic',
-    isPopular: false,
-    accentColor: 'text-pink-500',
-    borderColor: 'border-pink-500',
-    buttonClasses: 'bg-pink-600 hover:bg-pink-700 text-white',
-  },
-  {
-    id: 3, // <-- ID gói
-    name: 'Premium',
-    price: '150.000đ',
-    priceValue: 150000, // <-- Giá trị số
-    description: '60 tin / 14 ngày',
-    features: [
-      '60 tin đăng không giới hạn',
-      'Thời hạn 14 ngày mỗi tin',
-      'Hiển thị nổi bật ưu tiên',
-      'Hỗ trợ khách hàng ưu tiên',
-      'Badge "Tin Premium"',
-    ],
-    icon: Star,
-    buttonText: 'Mua Ngay Premium',
-    isPopular: true,
-    accentColor: 'text-yellow-500',
-    borderColor: 'border-yellow-500',
-    buttonClasses: 'bg-yellow-500 hover:bg-yellow-600 text-gray-900',
-  },
-  {
-    id: 4, // <-- ID gói
-    name: 'VIP',
-    price: '200.000đ',
-    priceValue: 200000, // <-- Giá trị số
-    description: '90 tin / 30 ngày',
-    features: [
-      '90 tin đăng không giới hạn',
-      'Thời hạn 30 ngày mỗi tin',
-      'Hiển thị đầu trang luôn',
-      'Hỗ trợ VIP 24/7',
-      'Quảng cáo trên trang chủ',
-      'Badge "Tin VIP"',
-    ],
-    icon: Gem,
-    buttonText: 'Mua Ngay VIP',
-    isPopular: false,
-    accentColor: 'text-blue-500',
-    borderColor: 'border-blue-500',
-    buttonClasses: 'bg-blue-600 hover:bg-blue-700 text-white',
-  },
-];
-
-// Định nghĩa kiểu dữ liệu cho plan
-type Plan = typeof pricingPlans[0];
+// Định nghĩa kiểu dữ liệu cho plan (gộp từ dữ liệu BE)
+type Plan = {
+  id: number; // subId
+  name: string; // subName
+  price: string; // formatted price string for display (e.g. "50.000đ")
+  priceValue: number; // numeric price to send to backend (VNĐ)
+  description?: string; // subDetails or derived description
+  features: string[];
+  icon: any;
+  buttonText: string;
+  isPopular?: boolean;
+  accentColor?: string;
+  borderColor?: string;
+  buttonClasses?: string;
+};
 
 export default function PricingPage() {
   const router = useRouter();
+  const [plans, setPlans] = useState<Plan[]>([]);
   // (1) Mặc định, state isLoggedIn là 'false' (chưa đăng nhập)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -89,6 +40,59 @@ export default function PricingPage() {
     }
     // Nếu không tìm thấy, isLoggedIn vẫn là 'false' như mặc định
   }, []); // Mảng rỗng nghĩa là chỉ chạy 1 lần khi trang tải
+
+  // Load subscriptions from backend and map to UI plan structure
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const subs: any[] = await getSubscriptions();
+        if (!mounted || !Array.isArray(subs)) return;
+
+        const icons = [Package, Star, Gem, Package, Star];
+
+        const mapped: Plan[] = subs
+          // filter out free packages: either subPrice == 0 or name contains 'free'
+          .filter((s) => {
+            const priceNum = Number(s.subPrice ?? 0);
+            const name = (s.subName || '').toString();
+            return priceNum > 0 && !/free/i.test(name);
+          })
+          .map((s, idx) => {
+            const priceNum = Number(s.subPrice ?? 0);
+            const priceDisplay = priceNum ? priceNum.toLocaleString('vi-VN') + 'đ' : '0đ';
+
+            const details = s.subDetails || '';
+            const features = details
+              ? details.split(/\n|\r|,|;|\.|\|/).map((t: string) => t.trim()).filter(Boolean)
+              : [`${s.duration || ''} ngày`, 'Hỗ trợ cơ bản'];
+
+            return {
+              id: Number(s.subId),
+              name: s.subName || `Gói ${s.subId}`,
+              price: priceDisplay,
+              priceValue: priceNum,
+              description: s.subDetails || `${s.duration || ''} ngày`,
+              features,
+              icon: icons[idx % icons.length] || Package,
+              buttonText: `Mua Ngay ${s.subName || ''}`,
+              isPopular: !!s.priorityLevel,
+              accentColor: idx === 1 ? 'text-yellow-500' : idx === 2 ? 'text-blue-500' : 'text-pink-500',
+              borderColor: idx === 1 ? 'border-yellow-500' : idx === 2 ? 'border-blue-500' : 'border-pink-500',
+              buttonClasses: idx === 1 ? 'bg-yellow-500 hover:bg-yellow-600 text-gray-900' : idx === 2 ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-pink-600 hover:bg-pink-700 text-white',
+            };
+          });
+
+        setPlans(mapped);
+      } catch (err) {
+        // silently fail: keep static UI if needed
+        console.error('Failed to load subscriptions', err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // (3) Hàm xử lý khi nhấn nút "Mua Ngay"
   const handleCheckoutClick = (plan: Plan) => {
@@ -154,17 +158,21 @@ export default function PricingPage() {
         {/* --- Lưới chứa các gói --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 items-stretch">
           
-          {pricingPlans.map((plan) => (
+          {plans.map((plan: Plan, idx: number) => (
             <div
               key={plan.id} // Dùng key duy nhất
-              className={`
-                relative group bg-white rounded-2xl shadow-lg border-2
-                transition-all duration-300
-                ${plan.isPopular ? 'scale-105' : 'hover:shadow-xl'}
-                ${plan.borderColor}
-              `}
+              className={
+                `relative group rounded-2xl shadow-lg border-2 transition-all duration-300 ` +
+                // center card slightly larger
+                `${idx === Math.floor(plans.length/2) ? 'scale-105' : 'hover:shadow-xl'} ` +
+                // border color fallback
+                `${plan.borderColor || (idx === 1 ? 'border-yellow-500' : idx === 2 ? 'border-blue-500' : 'border-pink-500')} ` +
+                // subtle themed background per index
+                `${idx === 0 ? 'bg-gradient-to-b from-pink-50 to-pink-100' : idx === 1 ? 'bg-gradient-to-b from-yellow-50 to-yellow-100' : 'bg-gradient-to-b from-blue-50 to-blue-100'}`
+              }
             >
-              {plan.isPopular && (
+              {/* Show 'Phổ biến nhất' only on the center card */}
+              {idx === Math.floor(plans.length/2) && (
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
                   <span className="bg-yellow-500 text-gray-900 text-sm font-bold px-6 py-2 rounded-full uppercase shadow-lg">
                     Phổ biến nhất
@@ -175,7 +183,7 @@ export default function PricingPage() {
               <div className="relative h-full flex flex-col overflow-hidden rounded-2xl">
                 <div className="p-8 flex flex-col h-full">
                   <div className="flex-shrink-0">
-                    <plan.icon className={`w-10 h-10 mb-4 ${plan.accentColor}`} />
+                    <plan.icon className={`w-10 h-10 mb-4 ${plan.accentColor || (idx === 1 ? 'text-yellow-500' : idx === 2 ? 'text-blue-500' : 'text-pink-500')}`} />
                     <h3 className="text-3xl font-bold text-gray-900 mb-2">
                       {plan.name}
                     </h3>
@@ -194,7 +202,7 @@ export default function PricingPage() {
                   <hr className="border-gray-200 my-6" />
 
                   <ul className="space-y-4 text-gray-600 flex-grow">
-                    {plan.features.map((feature, index) => (
+                    {plan.features.map((feature: string, index: number) => (
                       <li key={index} className="flex items-start">
                         <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-1" />
                         <span>{feature}</span>
@@ -205,13 +213,11 @@ export default function PricingPage() {
                   {/* Nút Mua Ngay */}
                   <div className="flex-shrink-0 mt-8">
                     <button
-                      // (5) Nút này gọi hàm xử lý ở trên
                       onClick={() => handleCheckoutClick(plan)}
-                      className={`
-                        block w-full text-center px-6 py-4 rounded-lg font-bold text-lg
-                        transition-colors cursor-pointer
-                        ${plan.buttonClasses}
-                      `}
+                      className={`block w-full text-center px-6 py-4 rounded-lg font-bold text-lg transition-colors cursor-pointer ` +
+                        // prefer plan.buttonClasses if provided, otherwise choose themed button
+                        `${plan.buttonClasses || (idx === 1 ? 'bg-yellow-500 hover:bg-yellow-600 text-gray-900' : idx === 2 ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-pink-600 hover:bg-pink-700 text-white')}`
+                      }
                     >
                       {plan.buttonText}
                     </button>

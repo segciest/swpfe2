@@ -90,6 +90,36 @@ export default function Navbar() {
         }
     }, []);
 
+    // Helper: xác định user có quyền admin/manager hay không
+    const isAdminOrManager = (u: any) => {
+        if (!u) return false;
+        // common shapes: u.role === 'ADMIN' or u.role.roleName === 'ADMIN' or u.roles = [{roleName:'ADMIN'}]
+        try {
+            if (typeof u.role === 'string') {
+                const r = u.role.toUpperCase();
+                if (r === 'ADMIN' || r === 'MANAGER') return true;
+            }
+            if (u.role && typeof u.role === 'object') {
+                const rn = (u.role.roleName || u.role.name || '').toString().toUpperCase();
+                if (rn === 'ADMIN' || rn === 'MANAGER') return true;
+            }
+            if (Array.isArray(u.roles)) {
+                for (const item of u.roles) {
+                    const rn = (item.roleName || item.name || item).toString().toUpperCase();
+                    if (rn === 'ADMIN' || rn === 'MANAGER') return true;
+                }
+            }
+            if (Array.isArray(u.authorities)) {
+                for (const a of u.authorities) {
+                    if (String(a).toUpperCase().includes('ADMIN') || String(a).toUpperCase().includes('MANAGER')) return true;
+                }
+            }
+        } catch (e) {
+            // fallback false
+        }
+        return false;
+    };
+
     // Event listener để mở modal từ Banner
     useEffect(() => {
         const handleOpenModal = () => {
@@ -352,16 +382,12 @@ export default function Navbar() {
                                     <button
                                         onClick={() =>
                                             router.push(
-                                                userData.role === 'ADMIN' || userData.role === 'MANAGER'
-                                                    ? '/admin'
-                                                    : '/profile'
+                                                isAdminOrManager(userData) ? '/admin' : '/profile'
                                             )
                                         }
                                         className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                                     >
-                                        {userData.role === 'ADMIN' || userData.role === 'MANAGER'
-                                            ? 'Admin Dashboard'
-                                            : 'Hồ sơ'}
+                                        {isAdminOrManager(userData) ? 'Admin Dashboard' : 'Hồ sơ'}
                                     </button>
 
                                     <button
@@ -386,16 +412,14 @@ export default function Navbar() {
                                         Bài đăng yêu thích
                                     </button>
 
-                                    <button
-                                        onClick={() =>
-                                            router.push(
-                                                '/admin/chart'
-                                            )
-                                        }
-                                        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                                    >
-                                        Admin chart
-                                    </button>
+                                    {isAdminOrManager(userData) && (
+                                        <button
+                                            onClick={() => router.push('/admin/chart')}
+                                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                        >
+                                            Admin chart
+                                        </button>
+                                    )}
 
                                     <button
                                         onClick={handleLogout}
