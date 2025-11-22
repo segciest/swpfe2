@@ -117,7 +117,7 @@ export default function ListingDetailClient({ data }: { data: any }) {
                                 </div>
                                 <div>
                                     <p className="font-medium">{data.sellerName}</p>
-                                    <p className="text-sm text-gray-500">{data.seller.subid?.subName}</p>
+
                                 </div>
                             </div>
                             <div className="text-right">
