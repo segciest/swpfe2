@@ -11,6 +11,12 @@ export default function AdminDashboard() {
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [selected, setSelected] = useState<any | null>(null);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+    const [rejectReason, setRejectReason] = useState('Nội dung không phù hợp');
+    const [showReportActionModal, setShowReportActionModal] = useState(false);
+    const [reportActionTargetId, setReportActionTargetId] = useState<number | null>(null);
+    const [reportActionChoice, setReportActionChoice] = useState<'1' | '2' | '3'>('1');
     const [users, setUsers] = useState<any[]>([]);
     const [editForm, setEditForm] = useState({
         subName: "",
@@ -134,19 +140,24 @@ export default function AdminDashboard() {
     };
 
     // ❌ Từ chối bài
-    const handleDeny = async (id: string) => {
-        if (!confirm('Bạn có chắc muốn từ chối bài đăng này?')) return;
+    // Open reject modal (replace prompt) for listing
+    const openRejectModal = (id: string) => {
+        setRejectTargetId(id);
+        setRejectReason('Nội dung không phù hợp');
+        setShowRejectModal(true);
+    };
 
-        const reason = window.prompt('Nhập lý do từ chối (sẽ gửi cho người đăng):', 'Nội dung không phù hợp');
-        if (reason === null) return; // user cancelled
-
+    const submitReject = async () => {
+        if (!rejectTargetId) return;
         try {
-            const res = await fetch(`http://localhost:8080/api/listing/reject/${id}?reason=${encodeURIComponent(reason)}`, {
+            const res = await fetch(`http://localhost:8080/api/listing/reject/${rejectTargetId}?reason=${encodeURIComponent(rejectReason)}`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${getToken()}` },
             });
             if (!res.ok) throw new Error(await res.text());
             alert('❌ Từ chối thành công! Lý do đã được gửi tới người dùng.');
+            setShowRejectModal(false);
+            setRejectTargetId(null);
             fetchListings();
         } catch (err: any) {
             alert(err.message || 'Không thể từ chối!');
@@ -154,80 +165,57 @@ export default function AdminDashboard() {
     };
 
     // ✅ Duyệt / từ chối báo cáo
-    const handleReportAction = async (id: number, status: 'RESOLVED' | 'REJECTED') => {
-        // Confirm first
-        if (!confirm(`Xác nhận ${status === 'RESOLVED' ? 'duyệt (đã xử lý)' : 'từ chối'} báo cáo này?`)) return;
+    const handleReportAction = (id: number, status: 'RESOLVED' | 'REJECTED') => {
+        if (status === 'REJECTED') {
+            // keep simple confirm for rejecting a report
+            if (!confirm('Xác nhận từ chối báo cáo này?')) return;
+            (async () => {
+                try {
+                    const token = getToken();
+                    const res = await fetch(`http://localhost:8080/api/report/status/${id}?status=${status}`, {
+                        method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+                    alert('🚫 Báo cáo đã bị từ chối!');
+                    fetchReports();
+                } catch (err: any) {
+                    alert(err.message || 'Không thể cập nhật trạng thái báo cáo!');
+                }
+            })();
+            return;
+        }
 
+        // For RESOLVED, open modal to choose action (replace prompt)
+        setReportActionTargetId(id);
+        setReportActionChoice('1');
+        setShowReportActionModal(true);
+    };
+
+    const submitReportAction = async () => {
+        if (!reportActionTargetId) return;
         try {
             const token = getToken();
-
-            if (status === 'REJECTED') {
-                // Keep existing behavior for reject: update report status to REJECTED
-                const res = await fetch(`http://localhost:8080/api/report/status/${id}?status=${status}`, {
-                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
-                });
-                if (!res.ok) throw new Error(await res.text());
-                alert('🚫 Báo cáo đã bị từ chối!');
-                fetchReports();
-                return;
-            }
-
-            // For RESOLVED, ask admin which action to perform
-            // Offer three choices: ban listing, ban user, or just resolve
-            const input = window.prompt(
-                'Chọn hành động cho báo cáo:\n1 - Banned listing (khóa bài đăng)\n2 - Banned user (khóa tài khoản người bán)\n3 - Chỉ đánh dấu đã xử lý (Resolve only)\nNhập 1, 2 hoặc 3',
-                '1'
-            );
-            if (!input) return;
-
-            const choice = input.trim();
-            if (choice === '3') {
-                // Just resolve via existing status endpoint
-                const res = await fetch(`http://localhost:8080/api/report/status/${id}?status=RESOLVED`, {
-                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
+            if (reportActionChoice === '3') {
+                const res = await fetch(`http://localhost:8080/api/report/status/${reportActionTargetId}?status=RESOLVED`, {
+                    method: 'PUT', headers: { Authorization: `${token ? `Bearer ${token}` : ''}` }
                 });
                 if (!res.ok) throw new Error(await res.text());
                 alert('✅ Báo cáo đã được đánh dấu là đã xử lý (Resolved)');
+                setShowReportActionModal(false);
+                setReportActionTargetId(null);
                 fetchReports();
                 return;
             }
 
-            // Map choice to actionType expected by backend handleReport endpoint
-            if (choice === '1' || choice === '2') {
-                const actionType = choice === '1' ? 'bannedlisting' : 'banneduser';
-                const handleRes = await fetch(`http://localhost:8080/api/report/handle/${id}?actionType=${encodeURIComponent(actionType)}`, {
-                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
-                });
-                if (!handleRes.ok) throw new Error(await handleRes.text());
-                alert('✅ Báo cáo đã được xử lý: ' + actionType);
-                fetchReports();
-                return;
-            }
-
-            // option 4 (ban both) removed — admins can perform actions separately if needed
-
-            // if user typed the action string directly, accept common variants
-            const lower = choice.toLowerCase();
-            if (lower.includes('ban') && lower.includes('list')) {
-                const handleRes = await fetch(`http://localhost:8080/api/report/handle/${id}?actionType=bannedlisting`, {
-                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
-                });
-                if (!handleRes.ok) throw new Error(await handleRes.text());
-                alert('✅ Báo cáo đã được xử lý: bannedlisting');
-                fetchReports();
-                return;
-            }
-            if (lower.includes('ban') && lower.includes('user')) {
-                const handleRes = await fetch(`http://localhost:8080/api/report/handle/${id}?actionType=banneduser`, {
-                    method: 'PUT', headers: { Authorization: `Bearer ${token}` }
-                });
-                if (!handleRes.ok) throw new Error(await handleRes.text());
-                alert('✅ Báo cáo đã được xử lý: banneduser');
-                fetchReports();
-                return;
-            }
-
-            alert('Hành động không hợp lệ. Hủy.');
+            const actionType = reportActionChoice === '1' ? 'bannedlisting' : 'banneduser';
+            const handleRes = await fetch(`http://localhost:8080/api/report/handle/${reportActionTargetId}?actionType=${encodeURIComponent(actionType)}`, {
+                method: 'PUT', headers: { Authorization: `${token ? `Bearer ${token}` : ''}` }
+            });
+            if (!handleRes.ok) throw new Error(await handleRes.text());
+            alert('✅ Báo cáo đã được xử lý: ' + actionType);
+            setShowReportActionModal(false);
+            setReportActionTargetId(null);
+            fetchReports();
         } catch (err: any) {
             alert(err.message || 'Không thể cập nhật trạng thái báo cáo!');
         }
@@ -341,7 +329,7 @@ export default function AdminDashboard() {
                                                     )}
                                                     {role === 'ADMIN' && (
                                                         <button
-                                                            onClick={() => handleDeny(item.listingId)}
+                                                            onClick={() => openRejectModal(item.listingId)}
                                                             className="flex items-center gap-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
                                                         >
                                                             <XCircle size={16} /> Từ chối
@@ -688,6 +676,50 @@ export default function AdminDashboard() {
                         >
                             👁️ Xem bài đăng
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Modal: Confirm reject (reason input) --- */}
+            {showRejectModal && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white w-[600px] rounded-xl p-6 relative shadow-lg">
+                        <button onClick={() => setShowRejectModal(false)} className="absolute top-3 right-4 text-gray-600 hover:text-black">✕</button>
+                        <h2 className="text-xl font-bold mb-4">Nhập lý do từ chối</h2>
+                        <p className="text-sm text-gray-600 mb-4">Lý do sẽ được gửi tới người đăng.</p>
+                        <textarea className="w-full p-3 border rounded mb-4 h-32" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => { setShowRejectModal(false); setRejectTargetId(null); }} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
+                            <button onClick={submitReject} className="px-4 py-2 bg-red-500 text-white rounded">Gửi và Từ chối</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Modal: Report action chooser --- */}
+            {showReportActionModal && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white w-[520px] rounded-xl p-6 relative shadow-lg">
+                        <button onClick={() => setShowReportActionModal(false)} className="absolute top-3 right-4 text-gray-600 hover:text-black">✕</button>
+                        <h2 className="text-xl font-bold mb-4">Chọn hành động cho báo cáo</h2>
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-3">
+                                <input type="radio" name="reportAction" checked={reportActionChoice === '1'} onChange={() => setReportActionChoice('1')} />
+                                <span>Banned listing (khóa bài đăng)</span>
+                            </label>
+                            <label className="flex items-center gap-3">
+                                <input type="radio" name="reportAction" checked={reportActionChoice === '2'} onChange={() => setReportActionChoice('2')} />
+                                <span>Banned user (khóa tài khoản người bán)</span>
+                            </label>
+                            <label className="flex items-center gap-3">
+                                <input type="radio" name="reportAction" checked={reportActionChoice === '3'} onChange={() => setReportActionChoice('3')} />
+                                <span>Chỉ đánh dấu đã xử lý (Resolve only)</span>
+                            </label>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button onClick={() => setShowReportActionModal(false)} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
+                            <button onClick={submitReportAction} className="px-4 py-2 bg-green-500 text-white rounded">Thực hiện</button>
+                        </div>
                     </div>
                 </div>
             )}
