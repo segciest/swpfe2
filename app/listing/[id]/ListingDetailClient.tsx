@@ -112,22 +112,22 @@ export default function ListingDetailClient({ data }: { data: any }) {
                     {data.sellerName && (
                         <div className="flex items-center justify-between border-t pt-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-yellow-300 flex items-center justify-center font-bold text-gray-700">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-gray-700">
                                     {data.sellerName}
                                 </div>
-                                <div>
+                                {/* <div>
                                     <p className="font-medium">{data.sellerName}</p>
 
-                                </div>
+                                </div> */}
                             </div>
                             <div className="text-right">
-                                <p className="text-sm text-gray-600">⭐ 5.0 (1 đánh giá)</p>
+                                {/* <p className="text-sm text-gray-600">⭐ 5.0 (1 đánh giá)</p>
                                 <button
                                     onClick={() => alert("Đi tới trang người bán")}
                                     className="text-blue-600 text-sm hover:underline"
                                 >
                                     Xem trang
-                                </button>
+                                </button> */}
                             </div>
                         </div>
                     )}
@@ -139,10 +139,10 @@ export default function ListingDetailClient({ data }: { data: any }) {
                 {/* MÔ TẢ CHI TIẾT */}
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
                     <h2 className="text-xl font-bold mb-3">Mô tả chi tiết</h2>
-                    {data.content ? (
+                    {data.description ? (
                         <div
                             className="prose max-w-none text-gray-700"
-                            dangerouslySetInnerHTML={{ __html: data.content }}
+                            dangerouslySetInnerHTML={{ __html: data.description }}
                         />
                     ) : (
                         <p className="text-gray-500 italic">Chưa có mô tả chi tiết.</p>

@@ -815,12 +815,14 @@ export default function AdminDashboard() {
 
                                             <div className="flex justify-between items-center mt-4">
                                                 {/* Nút xem chi tiết */}
+                                                {/* Nút xem chi tiết mở tab mới */}
                                                 <button
-                                                    onClick={() => setSelected(item)}
+                                                    onClick={() => window.open(`/listing/${item.listingId}`, '_blank')}
                                                     className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
                                                 >
                                                     <Eye size={16} /> Chi tiết
                                                 </button>
+
 
                                                 {/* 3 nút quản lý */}
                                                 <div className="flex gap-2">
