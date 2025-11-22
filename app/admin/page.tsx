@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, Eye, Loader2, AlertTriangle, Pencil } from 'lucide-react';
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<'listings' | 'reports' | 'subscriptions' | 'users'>('listings');
+    const [activeTab, setActiveTab] = useState<'listings' | 'reports' | 'subscriptions' | 'users' | 'all_listings'>('listings');
     const [listings, setListings] = useState<any[]>([]);
     const [reports, setReports] = useState<any[]>([]);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -37,6 +37,8 @@ export default function AdminDashboard() {
         priorityLevel: 1,
         status: "ACTIVE"
     });
+
+    const [allListings, setAllListings] = useState<any[]>([]);
 
 
     const router = useRouter();
@@ -125,6 +127,22 @@ export default function AdminDashboard() {
         }
     };
 
+    // 📋 Lấy tất cả bài đăng
+    const fetchAllListings = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch("http://localhost:8080/api/listing", {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setAllListings(await res.json());
+        } catch (err: any) {
+            alert(err.message || "Không thể tải danh sách bài đăng!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // Tự động tải dữ liệu theo tab
     useEffect(() => {
@@ -132,6 +150,7 @@ export default function AdminDashboard() {
         else if (activeTab === 'reports') fetchReports();
         else if (activeTab === 'subscriptions') fetchSubscriptions();
         else if (activeTab === 'users') fetchUsers();
+        else if (activeTab === 'all_listings') fetchAllListings();
     }, [activeTab]);
 
     // ✅ Duyệt bài
@@ -202,6 +221,8 @@ export default function AdminDashboard() {
         setShowReportActionModal(true);
     };
 
+
+    // Submit report action
     const submitReportAction = async () => {
         if (!reportActionTargetId) return;
         try {
@@ -274,6 +295,53 @@ export default function AdminDashboard() {
         }
     };
 
+    // 🙈 Ẩn bài đăng
+    const hideListing = async (id: string) => {
+        if (!confirm("Bạn có chắc muốn ẨN bài đăng này?")) return;
+
+        try {
+            const res = await fetch(
+                `http://localhost:8080/api/listing/status/${id}?status=BANNED`,
+                {
+                    method: "PUT",
+                    headers: { Authorization: `Bearer ${getToken()}` }
+                }
+            );
+
+            if (!res.ok) throw new Error(await res.text());
+            alert("Đã ẨN bài đăng!");
+
+            fetchAllListings();
+        } catch (err: any) {
+            alert(err.message || "Không thể ẩn bài đăng!");
+        }
+    };
+
+
+    // 👁️ Hiện lại bài đăng
+    const showListing = async (id: string) => {
+        if (!confirm("Bạn có chắc muốn HIỆN lại bài đăng này?")) return;
+
+        try {
+            const res = await fetch(
+                `http://localhost:8080/api/listing/status/${id}?status=ACTIVE`,
+                {
+                    method: "PUT",
+                    headers: { Authorization: `Bearer ${getToken()}` }
+                }
+            );
+
+            if (!res.ok) throw new Error(await res.text());
+            alert("Đã HIỆN bài đăng trở lại!");
+
+            fetchAllListings();
+        } catch (err: any) {
+            alert(err.message || "Không thể hiện bài đăng!");
+        }
+    };
+
+
+
 
     return (
         <div className="min-h-screen bg-gray-100 flex">
@@ -285,7 +353,8 @@ export default function AdminDashboard() {
                         { key: 'listings', label: 'Duyệt bài đăng' },
                         { key: 'reports', label: 'Duyệt báo cáo' },
                         { key: 'subscriptions', label: 'Quản lý gói đăng ký' },
-                        { key: 'users', label: 'Quản lý người dùng' }   // 👈 Thêm tab mới
+                        { key: 'users', label: 'Quản lý người dùng' },
+                        { key: 'all_listings', label: 'Tất cả bài đăng' }
                     ].map(({ key, label }) => (
                         <button
                             key={key}
@@ -626,6 +695,74 @@ export default function AdminDashboard() {
                         )}
                     </>
                 )}
+
+
+                {/* --- QUẢN LÝ BÀI ĐĂNG --- */}
+                {activeTab === 'all_listings' && (
+                    <>
+                        <h1 className="text-2xl font-bold mb-6 text-gray-800">Tất cả bài đăng</h1>
+
+                        {loading ? (
+                            <div className="flex justify-center items-center h-64">
+                                <Loader2 className="animate-spin w-8 h-8 text-gray-500" />
+                            </div>
+                        ) : allListings.length === 0 ? (
+                            <p className="text-gray-600 text-center mt-20">Không có bài đăng nào.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {allListings.map((item) => (
+                                    <div
+                                        key={item.listingId}
+                                        className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition"
+                                    >
+                                        <img src={item.imageUrls?.[0] || '/no-image.png'}
+                                            className="w-full h-40 object-cover" />
+
+                                        <div className="p-4">
+                                            <h3 className="text-lg font-semibold">{item.title}</h3>
+                                            <p className="text-sm text-gray-500">{item.status}</p>
+
+                                            <p className="text-yellow-700 font-bold mt-2">
+                                                {item.price?.toLocaleString()} VNĐ
+                                            </p>
+
+                                            <div className="flex justify-between items-center mt-4">
+                                                {/* Nút xem chi tiết */}
+                                                <button
+                                                    onClick={() => setSelected(item)}
+                                                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                                                >
+                                                    <Eye size={16} /> Chi tiết
+                                                </button>
+
+                                                {/* 3 nút quản lý */}
+                                                <div className="flex gap-2">
+                                                    {item.status === "ACTIVE" ? (
+                                                        <button
+                                                            onClick={() => hideListing(item.listingId)}
+                                                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md"
+                                                        >
+                                                            Ẩn
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => showListing(item.listingId)}
+                                                            className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
+                                                        >
+                                                            Hiện
+                                                        </button>
+                                                    )}
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
+
 
                 {selected && activeTab === 'subscriptions' && (
                     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
