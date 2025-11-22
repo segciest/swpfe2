@@ -26,6 +26,15 @@ export default function AdminDashboard() {
         priorityLevel: 0,
         status: "ACTIVE"
     });
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [createForm, setCreateForm] = useState({
+        subName: "",
+        subDetails: "",
+        subPrice: "",
+        duration: 30,
+        priorityLevel: 1,
+        status: "ACTIVE"
+    });
 
 
     const router = useRouter();
@@ -345,6 +354,73 @@ export default function AdminDashboard() {
                     </>
                 )}
 
+                {/* --- Modal: Create subscription --- */}
+                {showCreateModal && (
+                    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                        <div className="bg-white w-[520px] rounded-xl p-6 relative shadow-lg">
+                            <button onClick={() => setShowCreateModal(false)} className="absolute top-3 right-4 text-gray-600 hover:text-black">✕</button>
+                            <h2 className="text-xl font-bold mb-4">Tạo gói đăng ký mới</h2>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="font-medium">Tên gói</label>
+                                    <input className="w-full p-2 border rounded" value={createForm.subName} onChange={(e) => setCreateForm({ ...createForm, subName: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="font-medium">Chi tiết</label>
+                                    <textarea className="w-full p-2 border rounded" value={createForm.subDetails} onChange={(e) => setCreateForm({ ...createForm, subDetails: e.target.value })} />
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="font-medium">Giá (VNĐ)</label>
+                                        <input className="w-full p-2 border rounded" type="number" value={createForm.subPrice} onChange={(e) => setCreateForm({ ...createForm, subPrice: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="font-medium">Thời hạn (ngày)</label>
+                                        <input className="w-full p-2 border rounded" type="number" value={createForm.duration} onChange={(e) => setCreateForm({ ...createForm, duration: Number(e.target.value) })} />
+                                    </div>
+                                    <div>
+                                        <label className="font-medium">Ưu tiên</label>
+                                        <input className="w-full p-2 border rounded" type="number" value={createForm.priorityLevel} onChange={(e) => setCreateForm({ ...createForm, priorityLevel: Number(e.target.value) })} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="font-medium">Trạng thái</label>
+                                    <select className="w-full p-2 border rounded" value={createForm.status} onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}>
+                                        <option value="ACTIVE">ACTIVE</option>
+                                        <option value="INACTIVE">INACTIVE</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-3 mt-4">
+                                <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
+                                <button onClick={async () => {
+                                    try {
+                                        const res = await fetch('http://localhost:8080/api/subscription/create', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                                            body: JSON.stringify({
+                                                subName: createForm.subName,
+                                                subDetails: createForm.subDetails,
+                                                subPrice: Number(createForm.subPrice),
+                                                duration: createForm.duration,
+                                                priorityLevel: createForm.priorityLevel,
+                                                status: createForm.status
+                                            })
+                                        });
+                                        if (!res.ok) throw new Error(await res.text());
+                                        alert('Tạo gói thành công');
+                                        setShowCreateModal(false);
+                                        setCreateForm({ subName: '', subDetails: '', subPrice: '', duration: 30, priorityLevel: 1, status: 'ACTIVE' });
+                                        fetchSubscriptions();
+                                    } catch (err: any) {
+                                        alert(err.message || 'Không thể tạo gói');
+                                    }
+                                }} className="px-4 py-2 bg-green-500 text-white rounded">Tạo</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* --- DUYỆT BÁO CÁO --- */}
                 {activeTab === 'reports' && (
                     <>
@@ -488,7 +564,12 @@ export default function AdminDashboard() {
                 {/* --- QUẢN LÝ GÓI ĐĂNG KÝ --- */}
                 {activeTab === 'subscriptions' && (
                     <>
-                        <h1 className="text-2xl font-bold mb-6 text-gray-800">Quản lý gói đăng ký</h1>
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <h1 className="text-2xl font-bold text-gray-800">Quản lý gói đăng ký</h1>
+                                                    <div className="flex items-center gap-2">
+                                                        <button onClick={() => setShowCreateModal(true)} className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded">Tạo gói mới</button>
+                                                    </div>
+                                                </div>
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
                                 <Loader2 className="animate-spin w-8 h-8 text-gray-500" />
