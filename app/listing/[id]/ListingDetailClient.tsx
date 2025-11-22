@@ -90,9 +90,9 @@ export default function ListingDetailClient({ data }: { data: any }) {
                                 window.location.href = `tel:${data.seller?.phone}`;
                             }}
                         >
-                            ☎️ Gọi {isLoggedIn ? (data.seller?.phone || "ẩn") : "**** *** ***"}
+                            ☎️ Gọi {isLoggedIn ? (data?.sellerPhone || "ẩn") : "**** *** ***"}
                         </button>
-                        <button
+                        {/* <button
                             className="flex-1 bg-yellow-400 hover:bg-yellow-500 py-3 rounded-lg font-semibold"
                             onClick={() => {
                                 if (!isLoggedIn) {
@@ -104,7 +104,7 @@ export default function ListingDetailClient({ data }: { data: any }) {
                             }}
                         >
                             💬 Chat
-                        </button>
+                        </button> */}
 
                     </div>
 
@@ -116,7 +116,7 @@ export default function ListingDetailClient({ data }: { data: any }) {
                                     {data.seller.userName[0]}
                                 </div>
                                 <div>
-                                    <p className="font-medium">{data.seller.userName}</p>
+                                    <p className="font-medium">{data.sellerName}</p>
                                     <p className="text-sm text-gray-500">{data.seller.subid?.subName}</p>
                                 </div>
                             </div>
@@ -150,10 +150,10 @@ export default function ListingDetailClient({ data }: { data: any }) {
                 </div>
 
                 {/* BÌNH LUẬN */}
-                <div className="bg-white rounded-2xl shadow-sm p-6">
+                {/* <div className="bg-white rounded-2xl shadow-sm p-6">
                     <h2 className="text-xl font-bold mb-3">Bình luận</h2>
                     <p className="text-gray-500 text-sm">Chưa có bình luận nào.</p>
-                </div>
+                </div> */}
             </div>
 
             {/* --- POPUP MODAL */}

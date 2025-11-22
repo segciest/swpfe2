@@ -325,6 +325,7 @@ export default function AdminDashboard() {
                                             <div className="flex justify-between items-center mt-4">
                                                 <button
                                                     onClick={() => setSelected(item)}
+
                                                     className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"
                                                 >
                                                     <Eye size={16} /> Chi tiết
@@ -575,12 +576,12 @@ export default function AdminDashboard() {
                 {/* --- QUẢN LÝ GÓI ĐĂNG KÝ --- */}
                 {activeTab === 'subscriptions' && (
                     <>
-                                                <div className="flex items-center justify-between mb-6">
-                                                    <h1 className="text-2xl font-bold text-gray-800">Quản lý gói đăng ký</h1>
-                                                    <div className="flex items-center gap-2">
-                                                        <button onClick={() => setShowCreateModal(true)} className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded">Tạo gói mới</button>
-                                                    </div>
-                                                </div>
+                        <div className="flex items-center justify-between mb-6">
+                            <h1 className="text-2xl font-bold text-gray-800">Quản lý gói đăng ký</h1>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => setShowCreateModal(true)} className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded">Tạo gói mới</button>
+                            </div>
+                        </div>
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
                                 <Loader2 className="animate-spin w-8 h-8 text-gray-500" />

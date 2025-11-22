@@ -232,9 +232,6 @@ export default function ProfilePage() {
                     >
                         ✏️ Chỉnh sửa trang cá nhân
                     </button>
-                    <button className="border py-2 rounded-lg hover:bg-gray-100">
-                        📤 Chia sẻ trang của bạn
-                    </button>
 
                     {/* ✅ Nút mới: Quản lý bài đăng */}
                     <button
