@@ -18,6 +18,8 @@ export default function AdminDashboard() {
     const [reportActionTargetId, setReportActionTargetId] = useState<number | null>(null);
     const [reportActionChoice, setReportActionChoice] = useState<'1' | '2' | '3'>('1');
     const [users, setUsers] = useState<any[]>([]);
+    const [showReportImageUrl, setShowReportImageUrl] = useState<string[] | null>(null);
+    const [reportImageIndex, setReportImageIndex] = useState<number>(0);
     const [editForm, setEditForm] = useState({
         subName: "",
         subDetails: "",
@@ -456,6 +458,15 @@ export default function AdminDashboard() {
                                                     <Eye size={16} /> Xem bài đăng
                                                 </button>
                                             )}
+                                            {/* 👁️ Nút Xem ảnh báo cáo nếu có */}
+                                            {r.imgUrl && (
+                                                <button
+                                                    onClick={() => { setShowReportImageUrl(String(r.imgUrl).split(',').map((s: string) => s.trim())); setReportImageIndex(0); }}
+                                                    className="flex items-center gap-1 px-3 py-1 bg-indigo-500 hover:bg-indigo-600 text-white text-sm rounded-md"
+                                                >
+                                                    <Eye size={16} /> Xem ảnh
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => handleReportAction(r.reportId, 'RESOLVED')}
                                                 className="flex items-center gap-1 px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md"
@@ -800,6 +811,40 @@ export default function AdminDashboard() {
                         <div className="flex justify-end gap-3 mt-6">
                             <button onClick={() => setShowReportActionModal(false)} className="px-4 py-2 bg-gray-200 rounded">Hủy</button>
                             <button onClick={submitReportAction} className="px-4 py-2 bg-green-500 text-white rounded">Thực hiện</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Modal: Report image preview --- */}
+            {showReportImageUrl && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                    <div className="relative bg-white rounded-lg shadow-lg p-4 max-w-4xl max-h-[90vh] overflow-auto">
+                        <button onClick={() => setShowReportImageUrl(null)} className="absolute right-3 top-3 text-gray-600 hover:text-black">✕</button>
+                        <div className="flex flex-col items-center justify-center gap-3">
+                            <div className="relative w-full flex items-center justify-center">
+                                <button
+                                    onClick={() => setReportImageIndex((i) => Math.max(0, i - 1))}
+                                    disabled={reportImageIndex <= 0}
+                                    className="absolute left-2 z-10 bg-white/80 rounded-full p-2 hover:bg-white"
+                                >
+                                    ‹
+                                </button>
+
+                                <div className="flex-grow flex items-center justify-center">
+                                    <img src={showReportImageUrl[reportImageIndex]} alt={`Report image ${reportImageIndex + 1}`} className="max-w-full max-h-[70vh] object-contain" />
+                                </div>
+
+                                <button
+                                    onClick={() => setReportImageIndex((i) => Math.min(showReportImageUrl.length - 1, i + 1))}
+                                    disabled={reportImageIndex >= showReportImageUrl.length - 1}
+                                    className="absolute right-2 z-10 bg-white/80 rounded-full p-2 hover:bg-white"
+                                >
+                                    ›
+                                </button>
+                            </div>
+
+                            <div className="text-sm text-gray-600">{reportImageIndex + 1} / {showReportImageUrl.length}</div>
                         </div>
                     </div>
                 </div>

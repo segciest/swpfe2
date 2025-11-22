@@ -80,9 +80,9 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       formData.append("listingId", listing.listingId);
       formData.append("reason", reportReason.trim());
 
-      // Gửi đúng chuẩn nhiều file với key "file"
+      // Gửi đúng chuẩn nhiều file với key "images" (backend expects 'images')
       reportFiles.forEach((file) => {
-        formData.append("file", file);
+        formData.append("images", file);
       });
 
       const res = await fetch("http://localhost:8080/api/report/create", {
